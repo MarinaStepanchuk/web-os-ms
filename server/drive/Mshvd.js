@@ -1,4 +1,4 @@
-import VirtualHardDrive from '../drive/VirtualHardDrive.js';
+// import VirtualHardDrive from './VirtualHardDrive.js';
 
 const convertBase64 = (file) => {
   return new Promise((resolve, reject) => {
@@ -76,4 +76,4 @@ class Msvhd {
   }
 }
 
-export default Msvhd;
+// export default Msvhd;

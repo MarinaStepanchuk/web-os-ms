@@ -1,17 +1,20 @@
 import express from 'express';
 import { port } from './constants.js';
-import Msvhd from './driver/Mshvd.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
 app.use(express.static('static'));
 
-app.get('/start', (req, res) => {
-  res.json(Msvhd.readFile('/apps/start.js'));
+app.get('/drive', (req, res) => {
+  res.sendFile(__dirname + '/drive' + '/VirtualHardDrive.js');
 });
 
-app.get('/drive', (req, res) => {
-  res.json(Msvhd.readFolder('/'));
+app.get('/driver', (req, res) => {
+  res.sendFile(path.join(__dirname, '/drive', '/Mshvd.js'));
 });
 
 const start = async () => {
