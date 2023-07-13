@@ -1,3 +1,8 @@
+#root {
+  width: 100%;
+  height: max-content;
+}
+
 .spinner {
   position: relative;
   height: 50px;

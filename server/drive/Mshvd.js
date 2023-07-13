@@ -21,15 +21,38 @@ const convertBase64 = (file) => {
 };
 
 class Msvhd {
-  static readFile(path) {
-    return VirtualHardDrive.getFile(path);
+  constructor() {
+    this.hardDrive = new VirtualHardDrive();
   }
 
-  static readFolder(path) {
-    return VirtualHardDrive.getFolder(path);
+  async init() {
+    await this.hardDrive.init();
   }
 
-  static async createFile(path, file) {
+  async updateDrive() {
+    try {
+      const response = await fetch('http://localhost:3001/update-drive', {
+        method: 'POST',
+        body: JSON.stringify(this.hardDrive),
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8',
+        },
+      });
+      const res = await response.json();
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  readFile(path) {
+    return this.hardDrive.getFile(path);
+  }
+
+  readFolder(path) {
+    return this.hardDrive.getFolder(path);
+  }
+
+  async createFile(path, file) {
     const fileString = await convertBase64(file);
     const newFile = {
       name: file.name,
@@ -39,22 +62,22 @@ class Msvhd {
       type: 'file',
     };
 
-    VirtualHardDrive.writeFile(path, newFile);
+    this.hardDrive.writeFile(path, newFile);
   }
 
-  static createFolder(path, name) {
-    VirtualHardDrive.writeFolder(path, name);
+  createFolder(path, name) {
+    this.hardDrive.writeFolder(path, name);
   }
 
-  static deleteFile(path) {
-    VirtualHardDrive.removeFile(path);
+  deleteFile(path) {
+    this.hardDrive.removeFile(path);
   }
 
-  static deleteFolder(path) {
-    VirtualHardDrive.removeFolder(path);
+  deleteFolder(path) {
+    this.hardDrive.removeFolder(path);
   }
 
-  static async updateFile(path, file) {
+  async updateFile(path, file) {
     const fileString = await convertBase64(file);
     const newFile = {
       name: file.name,
@@ -64,16 +87,14 @@ class Msvhd {
       type: 'file',
     };
 
-    VirtualHardDrive.updateFile(path, newFile);
+    this.hardDrive.updateFile(path, newFile);
   }
 
-  static renameFile(path, newName) {
-    VirtualHardDrive.renameFile(path, newName);
+  renameFile(path, newName) {
+    this.hardDrive.renameFile(path, newName);
   }
 
-  static renameFolder(path, newName) {
-    VirtualHardDrive.renameFolder(path, newName);
+  renameFolder(path, newName) {
+    this.hardDrive.renameFolder(path, newName);
   }
 }
-
-// export default Msvhd;

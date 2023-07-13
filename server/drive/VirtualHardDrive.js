@@ -1,32 +1,24 @@
-const drive = [
-  {
-    id: 1,
-    name: 'apps',
-    type: 'folder',
-    children: [
-      {
-        id: 2,
-        name: 'start.js',
-        type: 'file',
-        size: 134,
-        body: "(async () => {const response = await fetch('http://localhost:3001/drive');const drive = await response.json();console.log(drive);})();",
-      },
-    ],
-  },
-];
-
 class VirtualHardDrive {
-  static virtualDrive = drive;
+  constructor() {
+    this.virtualDrive = [];
+    // this.init();
+  }
 
-  static getDrive() {
+  getDrive() {
     return this.virtualDrive;
   }
 
-  static setDrive(data) {
+  setDrive(data) {
     this.virtualDrive = data;
   }
 
-  static getFile(path) {
+  async init() {
+    const response = await fetch('http://localhost:3001/load-drive');
+    const drive = await response.json();
+    this.setDrive(drive);
+  }
+
+  getFile(path) {
     const pathArray = path.split('/');
     const isRootDirectory = pathArray.length === 2;
 
@@ -39,7 +31,7 @@ class VirtualHardDrive {
 
     const folderPath = [...pathArray];
     const fileName = folderPath.pop();
-    const folder = VirtualHardDrive.getFolder(folderPath.join('/'));
+    const folder = this.getFolder(folderPath.join('/'));
 
     const file = folder.find(
       (element) => element.name === fileName && element.type === 'file'
@@ -48,7 +40,7 @@ class VirtualHardDrive {
     return file || null;
   }
 
-  static getFolder(path) {
+  getFolder(path) {
     const isRootDirectory = path === '/';
 
     if (isRootDirectory) {
@@ -69,8 +61,8 @@ class VirtualHardDrive {
     return result || null;
   }
 
-  static writeFile(path, newFile) {
-    const fileExists = !!VirtualHardDrive.getFile(
+  writeFile(path, newFile) {
+    const fileExists = !!this.getFile(
       path === '/' ? `${path}${newFile.name}` : `${path}/${newFile.name}`
     );
 
@@ -78,11 +70,11 @@ class VirtualHardDrive {
       throw new Error('File with this name already exists');
     }
 
-    VirtualHardDrive.getFolder(path).push(newFile);
+    getFolder(path).push(newFile);
   }
 
-  static writeFolder(path, name) {
-    const folderExists = !!VirtualHardDrive.getFolder(
+  writeFolder(path, name) {
+    const folderExists = !!this.getFolder(
       path === '/' ? `/${name}` : `${path}/${name}`
     );
 
@@ -97,12 +89,12 @@ class VirtualHardDrive {
       children: [],
     };
 
-    VirtualHardDrive.getFolder(path).push(newFolder);
+    this.getFolder(path).push(newFolder);
 
     return;
   }
 
-  static removeFile(path) {
+  removeFile(path) {
     const pathArray = path.split('/');
     const isRootDirectory = pathArray.length === 2;
 
@@ -117,14 +109,14 @@ class VirtualHardDrive {
 
     const folderPath = [...pathArray];
     const fileName = folderPath.pop();
-    const parrentFolder = VirtualHardDrive.getFolder(folderPath.join('/'));
+    const parrentFolder = this.getFolder(folderPath.join('/'));
     const index = parrentFolder.findIndex(
       (element) => element.name === fileName && element.type === 'file'
     );
     parrentFolder.splice(index, 1);
   }
 
-  static removeFolder(path) {
+  removeFolder(path) {
     const isRootDirectory = path === '/';
 
     if (isRootDirectory) {
@@ -135,20 +127,20 @@ class VirtualHardDrive {
     const pathArray = path.split('/');
     const folderPath = [...pathArray];
     const folderName = folderPath.pop();
-    const parrentFolder = VirtualHardDrive.getFolder(folderPath.join('/'));
+    const parrentFolder = this.getFolder(folderPath.join('/'));
     const index = parrentFolder.findIndex(
       (element) => element.name === folderName && element.type === 'folder'
     );
     parrentFolder.splice(index, 1);
   }
 
-  static updateFile(path, newFile) {
-    const file = VirtualHardDrive.getFile(path);
+  updateFile(path, newFile) {
+    const file = this.getFile(path);
     file.size = newFile.size;
     file.body = newFile.body;
   }
 
-  static renameFolder(path, newName) {
+  renameFolder(path, newName) {
     const isRootDirectory = path === '/';
 
     if (isRootDirectory) {
@@ -158,14 +150,14 @@ class VirtualHardDrive {
     const pathArray = path.split('/');
     const folderPath = [...pathArray];
     const folderName = folderPath.pop();
-    const parrentFolder = VirtualHardDrive.getFolder(folderPath.join('/'));
+    const parrentFolder = this.getFolder(folderPath.join('/'));
     const folder = parrentFolder.find(
       (element) => element.name === folderName && element.type === 'folder'
     );
     folder.name = newName;
   }
 
-  static renameFile(path, newName) {
+  renameFile(path, newName) {
     const pathArray = path.split('/');
     const isRootDirectory = pathArray.length === 2;
 
@@ -182,14 +174,10 @@ class VirtualHardDrive {
     const folderPath = [...pathArray];
     const fileName = folderPath.pop();
     const extension = fileName.split('.').at(-1);
-    const parrentFolder = VirtualHardDrive.getFolder(folderPath.join('/'));
+    const parrentFolder = getFolder(folderPath.join('/'));
     const file = parrentFolder.find(
       (element) => element.name === fileName && element.type === 'file'
     );
     file.name = `${newName}.${extension}`;
   }
 }
-
-const hardDrive = new VirtualHardDrive();
-
-// export default VirtualHardDrive;
