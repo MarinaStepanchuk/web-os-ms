@@ -107,8 +107,6 @@
   });
 
   activeApps.addEventListener('click', (event) => {
-    console.log(event.target.className);
-    console.log(event.target);
     if (event.target.className.includes('footer-icon')) {
       const app = event.target
         .getAttribute('data-path')
@@ -116,8 +114,8 @@
         .at(-1)
         .split('.');
       app.splice(-1, 1);
-      console.log(app);
-      // executor.startApp('');
+      const appName = app.join('.');
+      executor.startApp(appName);
     }
   });
 })();
