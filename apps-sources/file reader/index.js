@@ -73,6 +73,12 @@
     files.forEach((file) => {
       const item = document.createElement('div');
       item.classList.add('file-item');
+
+      if (!file.accessRights.public) {
+        item.classList.add('hide');
+        item.setAttribute('data-visibility', 'hidden');
+      }
+
       const icon = document.createElement('div');
       icon.classList.add('icon');
       const description = document.createElement('p');
@@ -89,7 +95,7 @@
         item.setAttribute('data-type', type);
 
         switch (type) {
-          case 'exe':
+          case 'application':
             item.setAttribute('data-type', 'exe');
             const appName = file.name.split('.');
             appName.splice(-1, 1);

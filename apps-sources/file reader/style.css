@@ -131,7 +131,6 @@
 
 #file-reader .file-list .file-item {
   width: 100px;
-  height: 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -157,4 +156,13 @@
 #file-reader .file-list .file-description {
   text-align: center;
   margin: 0;
+  overflow: hidden;
+  word-break: break-all;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+}
+
+#file-reader .hide {
+  display: none;
 }
