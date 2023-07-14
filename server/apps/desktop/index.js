@@ -1,4 +1,10 @@
 (() => {
+  const getArrNameByPath = (path) => {
+    const app = path.split('/').at(-1).split('.');
+    app.splice(-1, 1);
+    return app.join('.');
+  };
+
   const appWrapper = document.querySelector('.desktop-wrapper');
   const sectionDesctop = document.createElement('section');
   sectionDesctop.classList.add('desktop');
@@ -82,6 +88,37 @@
     sectionDesctop.append(icon);
   });
 
+  sectionDesctop.addEventListener('click', (event) => {
+    if (event.target.closest('.desktop-item')) {
+      const type = event.target
+        .closest('.desktop-item')
+        .getAttribute('data-type');
+      switch (type) {
+        case 'exe':
+          const appName = getArrNameByPath(
+            event.target.getAttribute('data-path')
+          );
+          executor.startApp(appName);
+          break;
+        case 'image':
+          executor.startApp('photos');
+          break;
+        case 'video':
+          executor.startApp('media player');
+          break;
+        case 'audio':
+          executor.startApp('audio player');
+          break;
+        case 'text':
+          executor.startApp('notepad');
+          break;
+        default:
+          alert('Unknown extension');
+          break;
+      }
+    }
+  });
+
   const activeApps = document.createElement('div');
   activeApps.classList.add('active-apps');
   footer.append(activeApps);
@@ -108,13 +145,7 @@
 
   activeApps.addEventListener('click', (event) => {
     if (event.target.className.includes('footer-icon')) {
-      const app = event.target
-        .getAttribute('data-path')
-        .split('/')
-        .at(-1)
-        .split('.');
-      app.splice(-1, 1);
-      const appName = app.join('.');
+      const appName = getArrNameByPath(event.target.getAttribute('data-path'));
       executor.startApp(appName);
     }
   });

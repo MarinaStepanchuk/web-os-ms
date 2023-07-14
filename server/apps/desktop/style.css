@@ -29,9 +29,16 @@ body {
   max-width: 80px;
   display: flex;
   flex-direction: column;
-  font-size: 14px;
+  font-size: 13px;
   align-items: center;
   gap: 5px;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.desktop-wrapper .desktop-item:hover {
+  background-color: #ffffff61;
+  border-radius: 5px;
 }
 
 .desktop-wrapper .desktop-item .icon {
