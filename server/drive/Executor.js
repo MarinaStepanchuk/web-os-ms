@@ -31,4 +31,5 @@ class Executor {
 
 const executor = new Executor();
 executor.init();
+const drive = new VirtualHardDrive();
 const driver = executor.getDriver();

@@ -1,7 +1,7 @@
 class VirtualHardDrive {
   constructor() {
     this.virtualDrive = [];
-    // this.init();
+    this.activeUser = 'admin';
   }
 
   getDrive() {

@@ -125,8 +125,9 @@
         });
         driver.updateFile(`/users/active-user.txt`, file);
         driver.updateDrive();
+        drive.activeUser = name;
         executor.closeApp('login');
-        executor.startApp('desctop');
+        executor.startApp('desktop');
       } else {
         errorUser.innerText = 'data is incorrect';
         setTimeout(() => {
