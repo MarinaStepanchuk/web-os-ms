@@ -1,5 +1,3 @@
-// import VirtualHardDrive from './VirtualHardDrive.js';
-
 const convertBase64 = (file) => {
   return new Promise((resolve, reject) => {
     const fileReader = new FileReader();
