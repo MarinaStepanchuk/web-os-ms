@@ -14,6 +14,7 @@ body {
 }
 
 .desktop-wrapper .desktop {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
@@ -23,6 +24,7 @@ body {
   background-size: cover;
   box-sizing: border-box;
   padding: 10px;
+  overflow: hidden;
 }
 
 .desktop-wrapper .desktop-item {
@@ -66,6 +68,7 @@ body {
   box-sizing: border-box;
   /* justify-content: space-between; */
   justify-content: center;
+  z-index: 1000;
 }
 
 .desktop-wrapper .active-apps {

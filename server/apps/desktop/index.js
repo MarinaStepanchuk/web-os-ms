@@ -89,15 +89,14 @@
   });
 
   sectionDesctop.addEventListener('click', (event) => {
-    if (event.target.closest('.desktop-item')) {
+    const file = event.target.closest('.desktop-item');
+    if (file) {
       const type = event.target
         .closest('.desktop-item')
         .getAttribute('data-type');
       switch (type) {
         case 'exe':
-          const appName = getArrNameByPath(
-            event.target.getAttribute('data-path')
-          );
+          const appName = getArrNameByPath(file.getAttribute('data-path'));
           executor.startApp(appName);
           break;
         case 'image':

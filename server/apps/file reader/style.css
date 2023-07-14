@@ -1,0 +1,9 @@
+#file-reader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  height: 80%;
+  background-color: rgb(232, 232, 232);
+}

@@ -1,4 +1,4 @@
-(async () => {
+(() => {
   const root = document.getElementById('root');
   const spinner = document.createElement('div');
   spinner.classList.add('spinner');

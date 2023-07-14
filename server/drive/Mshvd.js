@@ -19,8 +19,22 @@ const convertBase64 = (file) => {
 };
 
 class Msvhd {
+  #openApps = [];
+
   constructor() {
     this.hardDrive = new VirtualHardDrive();
+  }
+
+  addOpenApp(appName) {
+    this.#openApps.push(appName);
+  }
+
+  removeOpenApp(appName) {
+    this.#openApps = this.openApps.filter((app) => app !== appName);
+  }
+
+  getOpenApp() {
+    return this.#openApps;
   }
 
   async init() {
