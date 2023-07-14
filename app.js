@@ -9,7 +9,6 @@ import { updateDrive, getDrive } from './drive/drive.js';
 const app = express();
 
 app.use(express.json({ limit: '300mb' }));
-
 app.use(express.static('static'));
 
 app.get('/drive', (req, res) => {
