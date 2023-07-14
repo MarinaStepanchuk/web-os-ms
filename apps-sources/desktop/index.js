@@ -88,7 +88,7 @@
     sectionDesctop.append(icon);
   });
 
-  sectionDesctop.addEventListener('click', (event) => {
+  sectionDesctop.addEventListener('dblclick', (event) => {
     const file = event.target.closest('.desktop-item');
     if (file) {
       const type = event.target

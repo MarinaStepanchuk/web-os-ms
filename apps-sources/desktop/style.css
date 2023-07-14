@@ -31,7 +31,8 @@ body {
   max-width: 80px;
   display: flex;
   flex-direction: column;
-  font-size: 13px;
+  font-size: 12px;
+  text-align: center;
   align-items: center;
   gap: 5px;
   padding: 4px;

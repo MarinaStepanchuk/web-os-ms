@@ -5,5 +5,140 @@
   transform: translate(-50%, -50%);
   width: 80%;
   height: 80%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
   background-color: rgb(232, 232, 232);
+  border-radius: 15px;
+  color: #212121;
+  font-size: 15px;
+  box-sizing: border-box;
+  overflow: hidden;
+  cursor: default;
+}
+
+#file-reader .file-reader-wrapper {
+  width: 100%;
+  height: calc(100% - 20px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  box-sizing: border-box;
+}
+
+#file-reader .control-panel {
+  height: 30px;
+  width: 100%;
+  background-color: #d0d0d0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 5px;
+}
+
+#file-reader .control-panel .control-button {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  padding: 2px;
+  box-sizing: border-box;
+}
+
+#file-reader .control-panel .control-button:hover {
+  background-color: #ffffff61;
+}
+
+#file-reader .control-panel .close-button:hover {
+  background-color: #a40303;
+  color: #fff;
+  font-size: 22px;
+}
+
+#file-reader .file-reader-wrapper .path-container {
+  width: 100%;
+  height: 30px;
+  border-bottom: 1px solid #d0d0d0;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  gap: 8px;
+}
+
+#file-reader .path-container .path-icon {
+  width: 20px;
+  height: 30px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  box-sizing: border-box;
+}
+
+#file-reader .path .path-icon::after {
+  content: '>';
+  margin: 0 8px;
+}
+
+#file-reader .path {
+  display: flex;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+#file-reader .path .path-item {
+  list-style: none;
+  padding: 0 8px;
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#file-reader .path .path-item:hover {
+  background-color: #ffffff61;
+}
+
+#file-reader .path .path-item::after {
+  content: '>';
+  margin: 0 0 0 8px;
+}
+
+#file-reader .file-reader-wrapper .files {
+  width: 100%;
+  height: calc(100% - 30px);
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+}
+
+#file-reader .body .item {
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+#file-reader .body .item:hover {
+  background-color: #ffffff61;
+  border-radius: 5px;
+}
+
+#file-reader .body .icon {
+  width: 100px;
+  height: 100px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
