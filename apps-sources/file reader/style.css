@@ -36,7 +36,6 @@
   justify-content: flex-end;
   align-items: center;
   box-sizing: border-box;
-  padding: 5px;
 }
 
 #file-reader .control-panel .control-button {
@@ -54,10 +53,14 @@
   background-color: #ffffff61;
 }
 
+#file-reader .control-panel .close-button {
+  font-size: 22px;
+}
+
 #file-reader .control-panel .close-button:hover {
   background-color: #a40303;
   color: #fff;
-  font-size: 22px;
+  padding-right: 5px;
 }
 
 #file-reader .file-reader-wrapper .path-container {
@@ -114,31 +117,44 @@
   margin: 0 0 0 8px;
 }
 
-#file-reader .file-reader-wrapper .files {
+#file-reader .file-reader-wrapper .file-list {
   width: 100%;
   height: calc(100% - 30px);
   box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: flex-start;
   padding: 10px;
+  font-size: 12px;
 }
 
-#file-reader .body .item {
-  padding: 10px;
+#file-reader .file-list .file-item {
+  width: 100px;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px;
   box-sizing: border-box;
 }
 
-#file-reader .body .item:hover {
+#file-reader .file-list .file-item:hover {
   background-color: #ffffff61;
   border-radius: 5px;
 }
 
-#file-reader .body .icon {
+#file-reader .file-list .icon {
   width: 100px;
-  height: 100px;
+  height: 80px;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
+}
+
+#file-reader .file-list .file-description {
+  text-align: center;
+  margin: 0;
 }

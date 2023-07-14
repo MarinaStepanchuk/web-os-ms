@@ -1,5 +1,4 @@
 (() => {
-  const appName = 'file reader';
   const icons = driver.readFolder('/apps/file reader/assets/icons');
 
   const rootElement = document.getElementById('file-reader');
@@ -7,18 +6,18 @@
   const appWrapper = document.querySelector('.file-reader-wrapper');
   executor.driver.addOpenApp('file reader');
 
-  console.log(rootElement);
-
   const controlPanel = document.createElement('div');
   controlPanel.classList.add('control-panel');
   rootElement.prepend(controlPanel);
 
   const turnButton = document.createElement('div');
   turnButton.classList.add('control-button');
+  turnButton.classList.add('turn-button');
   turnButton.innerText = '–';
 
   const expandButton = document.createElement('div');
   expandButton.classList.add('control-button');
+  expandButton.classList.add('expand-button');
   expandButton.innerText = '◻';
 
   const closeButton = document.createElement('div');
@@ -28,7 +27,7 @@
 
   controlPanel.append(turnButton, expandButton, closeButton);
 
-  const path = ['users', 'path'];
+  const path = ['users'];
   const pathContainer = document.createElement('div');
   pathContainer.classList.add('path-container');
   appWrapper.append(pathContainer);
@@ -63,6 +62,80 @@
   fillPath();
 
   const filesContainer = document.createElement('div');
-  filesContainer.classList.add('files');
+  filesContainer.classList.add('file-list');
   appWrapper.append(filesContainer);
+
+  const defaultIcons = driver.readFolder('/apps/default icons');
+
+  const fillFileReaderBody = (path) => {
+    const pathString = path.join('/');
+    const files = driver.readFolder(`/${pathString}`);
+    files.forEach((file) => {
+      const item = document.createElement('div');
+      item.classList.add('file-item');
+      const icon = document.createElement('div');
+      icon.classList.add('icon');
+      const description = document.createElement('p');
+      description.classList.add('file-description');
+      description.innerText = file.name;
+
+      if (file.type === 'folder') {
+        item.setAttribute('data-type', 'folder');
+        icon.style.backgroundImage = `url(${
+          icons.find((element) => element.name === 'folder.png').body
+        })`;
+      } else {
+        const type = file.mime.split('/')[0];
+        item.setAttribute('data-type', type);
+
+        switch (type) {
+          case 'exe':
+            item.setAttribute('data-type', 'exe');
+            const appName = file.name.split('.');
+            appName.splice(-1, 1);
+            const appFolder = driver.readFolder(`/apps/${appName.join('.')}`);
+            const iconUrl = appFolder.find(
+              (element) =>
+                element.name === 'icon.png' && element.type === 'file'
+            ).body;
+            icon.style.backgroundImage = `url(${iconUrl})`;
+            break;
+          case 'image':
+            item.setAttribute('data-type', 'image');
+            icon.style.backgroundImage = `url(${file.body})`;
+            break;
+          case 'video':
+            item.setAttribute('data-type', 'video');
+            icon.style.backgroundImage = `url(${
+              defaultIcons.find((element) => element.name === 'video.icon').body
+            })`;
+            break;
+          case 'audio':
+            item.setAttribute('data-type', 'audio');
+            icon.style.backgroundImage = `url(${
+              defaultIcons.find((element) => element.name === 'audio.icon').body
+            })`;
+            break;
+          case 'text':
+            item.setAttribute('data-type', 'text');
+            icon.style.backgroundImage = `url(${
+              defaultIcons.find((element) => element.name === 'text.icon').body
+            })`;
+            break;
+          default:
+            item.setAttribute('data-type', 'unknown');
+            icon.style.backgroundImage = `url(${
+              defaultIcons.find((element) => element.name === 'unknown.icon')
+                .body
+            })`;
+            break;
+        }
+      }
+
+      item.append(icon, description);
+      filesContainer.append(item);
+    });
+  };
+
+  fillFileReaderBody(path);
 })();
