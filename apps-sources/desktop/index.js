@@ -97,6 +97,7 @@
       switch (type) {
         case 'exe':
           const appName = getArrNameByPath(file.getAttribute('data-path'));
+          executor.closeApp(appName);
           executor.startApp(appName);
           break;
         case 'image':
@@ -145,6 +146,7 @@
   activeApps.addEventListener('click', (event) => {
     if (event.target.className.includes('footer-icon')) {
       const appName = getArrNameByPath(event.target.getAttribute('data-path'));
+      executor.closeApp(appName);
       executor.startApp(appName);
     }
   });

@@ -2,6 +2,7 @@
   const icons = driver.readFolder('/apps/file reader/assets/icons');
 
   const rootElement = document.getElementById('file-reader');
+  let fullScreenMode = false;
 
   const appWrapper = document.querySelector('.file-reader-wrapper');
   executor.driver.addOpenApp('file reader');
@@ -26,6 +27,21 @@
   closeButton.innerText = '×';
 
   controlPanel.append(turnButton, expandButton, closeButton);
+
+  closeButton.addEventListener('click', () => {
+    executor.closeApp('file reader');
+  });
+
+  expandButton.addEventListener('click', () => {
+    if (fullScreenMode) {
+      rootElement.style.width = '70%';
+      rootElement.style.height = '80%';
+    } else {
+      rootElement.style.width = '100%';
+      rootElement.style.height = '100%';
+    }
+    fullScreenMode = !fullScreenMode;
+  });
 
   const path = ['users'];
   const pathContainer = document.createElement('div');
@@ -144,4 +160,8 @@
   };
 
   fillFileReaderBody(path);
+
+  filesContainer.addEventListener('click', (event) => {
+    console.log(event.target.closest('[data-type]'));
+  });
 })();

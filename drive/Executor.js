@@ -12,7 +12,7 @@ class Executor {
     return this.driver;
   }
 
-  async startApp(appName) {
+  startApp(appName) {
     const files = this.driver.readFolder(`/apps/${appName}`);
     const startFile = files.find((item) => item.name.includes('.exe')).body;
     const script = document.createElement('script');
@@ -21,7 +21,7 @@ class Executor {
     document.body.append(script);
   }
 
-  async closeApp(appName) {
+  closeApp(appName) {
     const files = document.querySelectorAll(`[data-app="${appName}"]`);
     files.forEach((item) => {
       item.remove();
