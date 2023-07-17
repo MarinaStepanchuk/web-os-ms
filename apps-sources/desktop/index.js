@@ -30,57 +30,56 @@
     const title = document.createElement('span');
     title.innerText = file.name;
     desktopItem.append(icon, title);
-
-    if (file.mime.includes('label')) {
-      desktopItem.setAttribute('data-type', 'exe');
-      desktopItem.setAttribute('data-path', file.body);
-      const pathArray = file.body.split('/');
-      pathArray.splice(-1, 1);
-      const iconUrl = driver
-        .readFolder(pathArray.join('/'))
-        .find((item) => item.name === 'icon.png' && item.type === 'file').body;
-      icon.style.backgroundImage = `url(${iconUrl})`;
-      return desktopItem;
-    }
-
     const defaultIcons = driver.readFolder('/apps/default icons');
 
-    if (file.mime.includes('image')) {
-      desktopItem.setAttribute('data-type', 'image');
-      icon.style.backgroundImage = `url(${file.body})`;
-      title.innerText = file.name;
-      return desktopItem;
-    }
+    const type = file.mime.split('/')[0];
 
-    if (file.mime.includes('video')) {
-      desktopItem.setAttribute('data-type', 'video');
-      icon.style.backgroundImage = `url(${
-        defaultIcons.find((item) => item.name === 'video.icon').body
-      })`;
-      return desktopItem;
+    switch (type) {
+      case 'label':
+        desktopItem.setAttribute('data-type', 'exe');
+        desktopItem.setAttribute('data-path', file.body);
+        const name = file.name.split('.');
+        name.splice(-1, 1);
+        title.innerText = name.join('.');
+        const pathArray = file.body.split('/');
+        pathArray.splice(-1, 1);
+        const iconUrl = driver
+          .readFolder(pathArray.join('/'))
+          .find(
+            (item) => item.name === 'icon.png' && item.type === 'file'
+          ).body;
+        icon.style.backgroundImage = `url(${iconUrl})`;
+        return desktopItem;
+      case 'image':
+        desktopItem.setAttribute('data-type', 'image');
+        icon.style.backgroundImage = `url(${file.body})`;
+        title.innerText = file.name;
+        return desktopItem;
+      case 'video':
+        desktopItem.setAttribute('data-type', 'video');
+        icon.style.backgroundImage = `url(${
+          defaultIcons.find((item) => item.name === 'video.icon').body
+        })`;
+        return desktopItem;
+      case 'audio':
+        desktopItem.setAttribute('data-type', 'audio');
+        icon.style.backgroundImage = `url(${
+          defaultIcons.find((item) => item.name === 'audio.icon').body
+        })`;
+        return desktopItem;
+      case 'text':
+        desktopItem.setAttribute('data-type', 'text');
+        icon.style.backgroundImage = `url(${
+          defaultIcons.find((item) => item.name === 'text.icon').body
+        })`;
+        return desktopItem;
+      default:
+        desktopItem.setAttribute('data-type', 'unknown');
+        icon.style.backgroundImage = `url(${
+          defaultIcons.find((item) => item.name === 'unknown.icon').body
+        })`;
+        return desktopItem;
     }
-
-    if (file.mime.includes('audio')) {
-      desktopItem.setAttribute('data-type', 'audio');
-      icon.style.backgroundImage = `url(${
-        defaultIcons.find((item) => item.name === 'audio.icon').body
-      })`;
-      return desktopItem;
-    }
-
-    if (file.mime.includes('text')) {
-      desktopItem.setAttribute('data-type', 'text');
-      icon.style.backgroundImage = `url(${
-        defaultIcons.find((item) => item.name === 'text.icon').body
-      })`;
-      return desktopItem;
-    }
-
-    desktopItem.setAttribute('data-type', 'unknown');
-    icon.style.backgroundImage = `url(${
-      defaultIcons.find((item) => item.name === 'unknown.icon').body
-    })`;
-    return desktopItem;
   };
 
   userDesctopFiles.forEach((file) => {
@@ -97,7 +96,6 @@
       switch (type) {
         case 'exe':
           const appName = getArrNameByPath(file.getAttribute('data-path'));
-          executor.closeApp(appName);
           executor.startApp(appName);
           break;
         case 'image':

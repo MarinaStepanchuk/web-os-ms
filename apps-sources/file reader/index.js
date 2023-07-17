@@ -43,7 +43,7 @@
     fullScreenMode = !fullScreenMode;
   });
 
-  const path = ['users'];
+  let path = ['users'];
   const pathContainer = document.createElement('div');
   pathContainer.classList.add('path-container');
   appWrapper.append(pathContainer);
@@ -52,6 +52,9 @@
   pathContainer.append(pathIcon);
 
   const fillPath = () => {
+    const pathItems = pathContainer.querySelectorAll('.path-item');
+    pathItems.forEach((element) => element.remove());
+
     if (path.length === 0) {
       pathIcon.style.backgroundImage = `url(${
         icons.find((item) => item.name === 'home.png').body
@@ -84,6 +87,8 @@
   const defaultIcons = driver.readFolder('/apps/default icons');
 
   const fillFileReaderBody = (path) => {
+    const fileList = document.querySelector('.file-list');
+    fileList.innerHTML = '';
     const pathString = path.join('/');
     const files = driver.readFolder(`/${pathString}`);
     files.forEach((file) => {
@@ -120,6 +125,7 @@
               (element) =>
                 element.name === 'icon.png' && element.type === 'file'
             ).body;
+            item.setAttribute('data-path', `/apps/${appName}`);
             icon.style.backgroundImage = `url(${iconUrl})`;
             break;
           case 'image':
@@ -144,6 +150,18 @@
               defaultIcons.find((element) => element.name === 'text.icon').body
             })`;
             break;
+          case 'label':
+            item.setAttribute('data-type', 'label');
+            item.setAttribute('data-path', file.body);
+            const pathArray = file.body.split('/');
+            pathArray.splice(-1, 1);
+            const urlIcon = driver
+              .readFolder(pathArray.join('/'))
+              .find(
+                (item) => item.name === 'icon.png' && item.type === 'file'
+              ).body;
+            icon.style.backgroundImage = `url(${urlIcon})`;
+            break;
           default:
             item.setAttribute('data-type', 'unknown');
             icon.style.backgroundImage = `url(${
@@ -161,7 +179,58 @@
 
   fillFileReaderBody(path);
 
-  filesContainer.addEventListener('click', (event) => {
-    console.log(event.target.closest('[data-type]'));
+  const openFolder = (folderName) => {
+    path.push(folderName);
+    fillPath();
+    fillFileReaderBody(path);
+  };
+
+  const getAppNameByPath = (path) => {
+    const app = path.split('/').at(-1).split('.');
+    app.splice(-1, 1);
+    return app.join('.');
+  };
+
+  filesContainer.addEventListener('dblclick', (event) => {
+    const icon = event.target.closest('[data-type]');
+
+    if (!icon) {
+      return;
+    }
+
+    const type = icon.getAttribute('data-type');
+    const name = icon.querySelector('.file-description').innerText;
+
+    switch (type) {
+      case 'folder':
+        openFolder(name);
+        break;
+      case 'exe':
+        const appName = name.split('.');
+        appName.splice(-1, 1);
+        executor.startApp(appName.join('.'));
+        break;
+      case 'label':
+        const appPath = icon.getAttribute('data-path');
+        executor.startApp(getAppNameByPath(appPath));
+        break;
+      case 'image':
+        executor.startApp('photos');
+        break;
+      case 'video':
+        executor.startApp('media player');
+        break;
+      case 'audio':
+        executor.startApp('audio player');
+        break;
+      case 'text':
+        executor.startApp('notepad');
+        break;
+      default:
+        alert('Unknown extension');
+        break;
+    }
+
+    console.log(icon.getAttribute('data-type'));
   });
 })();

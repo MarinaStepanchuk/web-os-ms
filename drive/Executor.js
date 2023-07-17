@@ -13,6 +13,7 @@ class Executor {
   }
 
   startApp(appName) {
+    this.closeApp(appName);
     const files = this.driver.readFolder(`/apps/${appName}`);
     const startFile = files.find((item) => item.name.includes('.exe')).body;
     const script = document.createElement('script');
