@@ -14,7 +14,13 @@ class Executor {
 
   startApp(appName) {
     this.closeApp(appName);
-    const files = this.driver.readFolder(`/apps/${appName}`);
+    const files = this.driver.readFolder(`/apps/${appName}`).body;
+
+    if (!files) {
+      alert('application start error');
+      return;
+    }
+
     const startFile = files.find((item) => item.name.includes('.exe')).body;
     const script = document.createElement('script');
     script.src = startFile;
@@ -32,5 +38,5 @@ class Executor {
 
 const executor = new Executor();
 executor.init();
-const drive = new VirtualHardDrive();
+const hardDrive = new VirtualHardDrive();
 const driver = executor.getDriver();

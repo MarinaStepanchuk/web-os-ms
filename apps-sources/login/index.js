@@ -8,7 +8,12 @@
     }, {});
   };
 
-  const usersFolder = driver.readFolder(`/users`);
+  const usersFolder = driver.readFolder(`/users`).body;
+
+  if (!usersFolder) {
+    alert('unable to load user data');
+  }
+
   const fileActiveUser = usersFolder.find(
     (item) => item.name === 'active-user.txt'
   ).body;
@@ -48,7 +53,7 @@
   submitButton.classList.add('button-animate');
   form.append(nameLabel, passwordLabel, errorUser, submitButton);
 
-  const folder = driver.readFolder('/apps/login');
+  const folder = driver.readFolder('/apps/login').body;
   const avatarUser = usersFolder
     .find((user) => user.name === activeUser)
     .children.find((item) => item.name === 'avatar.jpg');
@@ -117,7 +122,7 @@
     try {
       const user = driver
         .readFolder(`/users/${name}`)
-        .find((item) => item.name === 'user.txt').body;
+        .body.find((item) => item.name === 'user.txt').body;
       const userData = converterUserData(user);
       if (userData.password === password && userData.name === name) {
         const file = new File([name], 'active-user.txt', {
@@ -125,7 +130,7 @@
         });
         driver.updateFile(`/users/active-user.txt`, file);
         driver.updateDrive();
-        drive.activeUser = name;
+        hardDrive.setActiveUser(name);
         executor.closeApp('login');
         executor.startApp('desktop');
       } else {

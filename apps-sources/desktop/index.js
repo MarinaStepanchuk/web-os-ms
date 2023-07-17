@@ -11,13 +11,13 @@
   const footer = document.createElement('footer');
   appWrapper.append(sectionDesctop, footer);
 
-  const appFolder = driver.readFolder('/apps/desktop');
+  const appFolder = driver.readFolder('/apps/desktop').body;
   const wallpaperUrl = appFolder.find(
     (item) => item.name === 'wallpapper.jpg'
   ).body;
-  const activeUser = drive.activeUser;
+  const activeUser = hardDrive.getActiveUser();
   sectionDesctop.style.backgroundImage = `url(${wallpaperUrl})`;
-  const userFolder = driver.readFolder(`/users/${activeUser}`);
+  const userFolder = driver.readFolder(`/users/${activeUser}`).body;
   const userDesctopFiles = userFolder.find(
     (item) => item.name === 'desktop' && item.type === 'folder'
   ).children;
@@ -30,7 +30,7 @@
     const title = document.createElement('span');
     title.innerText = file.name;
     desktopItem.append(icon, title);
-    const defaultIcons = driver.readFolder('/apps/default icons');
+    const defaultIcons = driver.readFolder('/apps/default icons').body;
 
     const type = file.mime.split('/')[0];
 
@@ -45,7 +45,7 @@
         pathArray.splice(-1, 1);
         const iconUrl = driver
           .readFolder(pathArray.join('/'))
-          .find(
+          .body.find(
             (item) => item.name === 'icon.png' && item.type === 'file'
           ).body;
         icon.style.backgroundImage = `url(${iconUrl})`;
@@ -135,7 +135,9 @@
       pathArray.splice(-1, 1);
       const iconUrl = driver
         .readFolder(pathArray.join('/'))
-        .find((item) => item.name === 'icon.png' && item.type === 'file').body;
+        .body.find(
+          (item) => item.name === 'icon.png' && item.type === 'file'
+        ).body;
       icon.style.backgroundImage = `url(${iconUrl})`;
       activeApps.append(icon);
     }

@@ -1,5 +1,5 @@
 (() => {
-  const icons = driver.readFolder('/apps/file reader/assets/icons');
+  const icons = driver.readFolder('/apps/file reader/assets/icons').body;
 
   const rootElement = document.getElementById('file-reader');
   let fullScreenMode = false;
@@ -43,7 +43,13 @@
     fullScreenMode = !fullScreenMode;
   });
 
-  let path = ['users'];
+  let path = [];
+
+  const history = {
+    position: 0,
+    memory: [],
+  };
+
   const pathContainer = document.createElement('div');
   pathContainer.classList.add('path-container');
   appWrapper.append(pathContainer);
@@ -51,47 +57,88 @@
   pathIcon.classList.add('path-icon');
   pathContainer.append(pathIcon);
 
+  pathContainer.addEventListener('click', (event) => {
+    const pathItem = event.target.closest('.path-item');
+
+    if (!pathItem) {
+      return;
+    }
+
+    const position = pathItem.getAttribute('data-position');
+
+    if (!position) {
+      console.log(path);
+      path = [];
+      console.log(path);
+      fillFileReaderBody(path);
+    }
+
+    if (position === path.length) {
+      return;
+    }
+
+    const newPath = path.slice(0, position);
+    path = newPath;
+    fillFileReaderBody(path);
+  });
+
   const fillPath = () => {
-    const pathItems = pathContainer.querySelectorAll('.path-item');
-    pathItems.forEach((element) => element.remove());
+    const pathList = pathContainer.querySelector('.path');
+    if (pathList) {
+      pathList.remove();
+    }
 
     if (path.length === 0) {
       pathIcon.style.backgroundImage = `url(${
         icons.find((item) => item.name === 'home.png').body
       })`;
-      return;
+    } else {
+      pathIcon.style.backgroundImage = `url(${
+        icons.find((item) => item.name === 'folder.png').body
+      })`;
     }
-
-    pathIcon.style.backgroundImage = `url(${
-      icons.find((item) => item.name === 'folder.png').body
-    })`;
 
     const list = document.createElement('ul');
     list.classList.add('path');
 
-    path.forEach((element) => {
+    const rootDirectory = document.createElement('li');
+    rootDirectory.classList.add('path-item');
+    rootDirectory.innerText = 'This PC';
+    rootDirectory.setAttribute('data-position', 0);
+    list.append(rootDirectory);
+
+    path.forEach((element, index) => {
       const item = document.createElement('li');
       item.classList.add('path-item');
+      item.setAttribute('data-position', index + 1);
       item.innerText = element;
       list.append(item);
     });
 
     pathContainer.append(list);
   };
-  fillPath();
 
   const filesContainer = document.createElement('div');
   filesContainer.classList.add('file-list');
   appWrapper.append(filesContainer);
 
-  const defaultIcons = driver.readFolder('/apps/default icons');
+  const defaultIcons = driver.readFolder('/apps/default icons').body;
 
   const fillFileReaderBody = (path) => {
-    const fileList = document.querySelector('.file-list');
-    fileList.innerHTML = '';
     const pathString = path.join('/');
     const files = driver.readFolder(`/${pathString}`);
-    files.forEach((file) => {
+
+    if (files.status === 'error') {
+      alert(files.message);
+      return;
+    }
+
+    fillPath();
+
+    const fileList = document.querySelector('.file-list');
+    fileList.innerHTML = '';
+
+    files.body.forEach((file) => {
       const item = document.createElement('div');
       item.classList.add('file-item');
 
@@ -120,7 +167,9 @@
             item.setAttribute('data-type', 'exe');
             const appName = file.name.split('.');
             appName.splice(-1, 1);
-            const appFolder = driver.readFolder(`/apps/${appName.join('.')}`);
+            const appFolder = driver.readFolder(
+              `/apps/${appName.join('.')}`
+            ).body;
             const iconUrl = appFolder.find(
               (element) =>
                 element.name === 'icon.png' && element.type === 'file'
@@ -157,7 +206,7 @@
             pathArray.splice(-1, 1);
             const urlIcon = driver
               .readFolder(pathArray.join('/'))
-              .find(
+              .body.find(
                 (item) => item.name === 'icon.png' && item.type === 'file'
               ).body;
             icon.style.backgroundImage = `url(${urlIcon})`;
@@ -181,7 +230,6 @@
 
   const openFolder = (folderName) => {
     path.push(folderName);
-    fillPath();
     fillFileReaderBody(path);
   };
 
@@ -230,7 +278,5 @@
         alert('Unknown extension');
         break;
     }
-
-    console.log(icon.getAttribute('data-type'));
   });
 })();

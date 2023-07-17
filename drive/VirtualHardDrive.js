@@ -1,7 +1,8 @@
 class VirtualHardDrive {
+  #activeUser = 'admin';
+
   constructor() {
     this.virtualDrive = [];
-    this.activeUser = 'admin';
   }
 
   getDrive() {
@@ -12,53 +13,118 @@ class VirtualHardDrive {
     this.virtualDrive = data;
   }
 
+  setActiveUser(user) {
+    this.#activeUser = user;
+  }
+
+  getActiveUser() {
+    return this.#activeUser;
+  }
+
   async init() {
     const response = await fetch('http://localhost:3001/load-drive');
     const drive = await response.json();
     this.setDrive(drive);
   }
 
-  getFile(path) {
-    const pathArray = path.split('/');
-    const isRootDirectory = pathArray.length === 2;
-
-    if (isRootDirectory) {
-      const file = this.virtualDrive.find(
-        (element) => element.name === pathArray[1] && element.type === 'file'
-      );
-      return file || null;
-    }
-
-    const folderPath = [...pathArray];
-    const fileName = folderPath.pop();
-    const folder = this.getFolder(folderPath.join('/'));
-
-    const file = folder.find(
-      (element) => element.name === fileName && element.type === 'file'
+  checkAccess(file) {
+    const { creator, access } = file.accessRights;
+    const activeUser = hardDrive.getActiveUser();
+    return (
+      creator === activeUser ||
+      access.reed.includes('all') ||
+      access.reed.includes(activeUser)
     );
+  }
 
-    return file || null;
+  getFile(path) {
+    try {
+      const pathArray = path.split('/');
+      const isRootDirectory = pathArray.length === 2;
+
+      if (isRootDirectory) {
+        const file = this.virtualDrive.find(
+          (element) => element.name === pathArray[1] && element.type === 'file'
+        );
+
+        if (!file) {
+          throw new Error('file not found');
+        }
+
+        const accessAllowed = this.checkAccess(file);
+
+        if (!accessAllowed) {
+          throw new Error('access denied');
+        }
+
+        return { status: 'successfully', body: file };
+      }
+
+      const folderPath = [...pathArray];
+      const fileName = folderPath.pop();
+      const folder = this.getFolder(folderPath.join('/'));
+
+      if (!folder.body) {
+        throw new Error(folder.error);
+      }
+
+      const file = folder.body.find(
+        (element) => element.name === fileName && element.type === 'file'
+      );
+
+      if (!file) {
+        throw new Error('file not found');
+      }
+
+      const accessAllowed = this.checkAccess(file);
+
+      if (!accessAllowed) {
+        throw new Error('access denied');
+      }
+
+      return { status: 'successfully', body: file };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
   }
 
   getFolder(path) {
-    const isRootDirectory = path === '/';
+    try {
+      const isRootDirectory = path === '/';
 
-    if (isRootDirectory) {
-      return this.virtualDrive;
-    }
-
-    const pathArray = path.slice(1).split('/');
-    const result = pathArray.reduce((acc, item) => {
-      const folder = acc.find(
-        (element) => element.name === item && element.type === 'folder'
-      );
-
-      if (folder) {
-        return folder.children;
+      if (isRootDirectory) {
+        return { status: 'successfully', body: this.virtualDrive };
       }
-    }, this.virtualDrive);
 
-    return result || null;
+      const pathArray = path.slice(1).split('/');
+      const result = pathArray.reduce((acc, item) => {
+        const folder = acc.find(
+          (element) => element.name === item && element.type === 'folder'
+        );
+
+        if (folder) {
+          const accessAllowed = this.checkAccess(folder);
+
+          if (!accessAllowed) {
+            throw new Error('access denied');
+          }
+
+          return folder.children;
+        } else {
+          throw new Error('folder not found');
+        }
+      }, this.virtualDrive);
+
+      return { status: 'successfully', body: result };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
   }
 
   writeFile(path, newFile) {
