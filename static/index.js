@@ -5,8 +5,8 @@
   spinner.classList.add('spinner');
   root.append(spinner);
 
-  const drive = loadScript('/drive');
-  drive.onload = () => {
+  const hardDrive = loadScript('/drive');
+  hardDrive.onload = () => {
     const driver = loadScript('/driver');
     driver.onload = () => {
       loadScript('/executor');
