@@ -179,16 +179,30 @@ class VirtualHardDrive {
 
       if (isRootDirectory) {
         const fileName = path.slice(1);
+        const file = this.virtualDrive.find(
+          (element) => element.name === fileName && element.type === 'file'
+        );
+
+        const accessAllowed = this.checkAccess(file, 'modify');
+
+        if (!accessAllowed) {
+          throw new Error('access denied');
+        }
+
         const index = this.virtualDrive.findIndex(
           (element) => element.name === fileName && element.type === 'file'
         );
         this.virtualDrive.splice(index, 1);
-        return;
+        return {
+          status: 'successfully',
+          body: true,
+        };
       }
 
       const folderPath = [...pathArray];
       const fileName = folderPath.pop();
       const parrentFolder = this.getFolder(folderPath.join('/')).body;
+
       const file = parrentFolder.find(
         (element) => element.name === fileName && element.type === 'file'
       );
@@ -226,7 +240,9 @@ class VirtualHardDrive {
       const pathArray = path.split('/');
       const folderPath = [...pathArray];
       const folderName = folderPath.pop();
-      const parrentFolder = this.getFolder(folderPath.join('/'));
+      const parrentFolder = this.getFolder(
+        folderPath.length === 1 ? '/' : folderPath.join('/')
+      ).body;
       const folder = parrentFolder.find(
         (element) => element.name === folderName && element.type === 'folder'
       );

@@ -286,13 +286,7 @@
     return app.join('.');
   };
 
-  const openFile = (event) => {
-    const file = event.target.closest('[data-type]');
-
-    if (!file) {
-      return;
-    }
-
+  const openFile = (file) => {
     const type = file.getAttribute('data-type');
     const name = file.querySelector('.file-description').innerText;
 
@@ -330,14 +324,18 @@
   };
 
   filesContainer.addEventListener('click', () => {
-    const openMenus = document.querySelectorAll('.context-menu');
-
-    if (openMenus.length) {
-      openMenus.forEach((item) => item.remove());
-    }
+    closeContextMenus();
   });
 
-  filesContainer.addEventListener('dblclick', (event) => openFile(event));
+  filesContainer.addEventListener('dblclick', (event) => {
+    const file = event.target.closest('[data-type]');
+
+    if (!file) {
+      return;
+    }
+
+    openFile(file);
+  });
 
   filesContainer.addEventListener('contextmenu', (event) => {
     event.preventDefault();
@@ -350,13 +348,16 @@
     openCommonContextMenu(event);
   });
 
-  function openFileContextMenu(event) {
+  function closeContextMenus() {
     const openMenus = document.querySelectorAll('.context-menu');
 
     if (openMenus.length) {
       openMenus.forEach((item) => item.remove());
     }
+  }
 
+  function openFileContextMenu(event) {
+    closeContextMenus();
     const fileElement = event.target.closest('.file-item');
     const menu = document.createElement('ul');
     menu.classList.add('file-context-menu');
@@ -391,18 +392,15 @@
       menu.style.left = `${event.clientX - rectContainer.left}px`;
     }
 
-    menu.addEventListener('click', (event) => {
-      console.log(event.target);
+    menu.addEventListener('click', async (event) => {
+      const actionType = event.target.innerText;
+
+      await takeActionByType(actionType, fileElement);
     });
   }
 
   function openCommonContextMenu(event) {
-    const openMenus = document.querySelectorAll('.context-menu');
-
-    if (openMenus.length) {
-      openMenus.forEach((item) => item.remove());
-    }
-
+    closeContextMenus();
     const menu = document.createElement('ul');
     menu.classList.add('common-context-menu');
     menu.classList.add('context-menu');
@@ -436,12 +434,43 @@
       menu.style.left = `${event.clientX - rectContainer.left}px`;
     }
 
-    menu.addEventListener('click', (event) => {
+    menu.addEventListener('click', async (event) => {
       const actionType = event.target.innerText;
 
-      takeActionByType(actionType);
+      await takeActionByType(actionType);
     });
   }
 
-  function takeActionByType(type) {}
+  async function takeActionByType(type, fileElement) {
+    switch (type) {
+      case 'Open':
+        openFile(fileElement);
+        closeContextMenus();
+        break;
+      case 'Delete':
+        closeContextMenus();
+        await deleteFile(fileElement);
+    }
+  }
+
+  async function deleteFile(fileElement) {
+    const type =
+      fileElement.getAttribute('data-type') === 'folder' ? 'folder' : 'file';
+    const fileName = fileElement.querySelector('.file-description').innerText;
+    const filePath = path.length
+      ? `/${path.join('/')}/${fileName}`
+      : `/${fileName}`;
+
+    const result =
+      type === 'folder'
+        ? driver.deleteFolder(filePath)
+        : driver.deleteFile(filePath);
+
+    if (result.status === 'successfully') {
+      await driver.updateDrive();
+      fillFileReaderBody(path);
+    } else {
+      alert(result.message);
+    }
+  }
 })();
