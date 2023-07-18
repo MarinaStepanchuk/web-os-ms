@@ -47,15 +47,62 @@
 
   const history = {
     position: 0,
-    memory: [],
+    memory: [[]],
   };
+
+  const navigatePanel = document.createElement('nav');
+  navigatePanel.classList.add('navigation-panel');
+  appWrapper.append(navigatePanel);
+
+  const navigateButtons = document.createElement('div');
+  navigateButtons.classList.add('navigation-buttons-container');
+  navigatePanel.append(navigateButtons);
+
+  const previousButton = document.createElement('button');
+  previousButton.classList.add('navigation-button');
+  previousButton.disabled = true;
+  previousButton.innerText = '←';
+  const nextButton = document.createElement('button');
+  nextButton.classList.add('navigation-button');
+  nextButton.disabled = true;
+  nextButton.innerText = '→';
+  navigateButtons.append(previousButton, nextButton);
+
+  previousButton.addEventListener('click', (event) => {
+    history.position -= 1;
+    path = [...history.memory[history.position]];
+    fillFileReaderBody(path);
+    nextButton.removeAttribute('disabled');
+
+    if (history.position === 0) {
+      event.currentTarget.disabled = true;
+    }
+  });
+
+  nextButton.addEventListener('click', (event) => {
+    history.position += 1;
+    path = [...history.memory[history.position]];
+    fillFileReaderBody(path);
+    previousButton.removeAttribute('disabled');
+
+    if (history.position === history.memory.length - 1) {
+      event.currentTarget.disabled = true;
+    }
+  });
 
   const pathContainer = document.createElement('div');
   pathContainer.classList.add('path-container');
-  appWrapper.append(pathContainer);
+  navigatePanel.append(pathContainer);
   const pathIcon = document.createElement('div');
   pathIcon.classList.add('path-icon');
   pathContainer.append(pathIcon);
+
+  const addHistoryPath = (path) => {
+    history.memory.push([...path]);
+    history.position = history.memory.length - 1;
+    previousButton.removeAttribute('disabled');
+    nextButton.disabled = true;
+  };
 
   pathContainer.addEventListener('click', (event) => {
     const pathItem = event.target.closest('.path-item');
@@ -67,18 +114,19 @@
     const position = pathItem.getAttribute('data-position');
 
     if (!position) {
-      console.log(path);
       path = [];
-      console.log(path);
+      addHistoryPath(path);
       fillFileReaderBody(path);
+      return;
     }
 
     if (position === path.length) {
       return;
     }
 
-    const newPath = path.slice(0, position);
+    const newPath = [...path].slice(0, position);
     path = newPath;
+    addHistoryPath(path);
     fillFileReaderBody(path);
   });
 
@@ -124,7 +172,7 @@
 
   const defaultIcons = driver.readFolder('/apps/default icons').body;
 
-  const fillFileReaderBody = (path) => {
+  function fillFileReaderBody(path) {
     const pathString = path.join('/');
     const files = driver.readFolder(`/${pathString}`);
 
@@ -224,12 +272,13 @@
       item.append(icon, description);
       filesContainer.append(item);
     });
-  };
+  }
 
   fillFileReaderBody(path);
 
   const openFolder = (folderName) => {
     path.push(folderName);
+    addHistoryPath(path);
     fillFileReaderBody(path);
   };
 
