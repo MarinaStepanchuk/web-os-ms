@@ -277,43 +277,114 @@ class VirtualHardDrive {
   }
 
   renameFolder(path, newName) {
-    const isRootDirectory = path === '/';
+    try {
+      const isRootDirectory = path === '/';
 
-    if (isRootDirectory) {
-      throw new Error('You cannot rename the root directory');
+      if (isRootDirectory) {
+        throw new Error('You cannot rename the root directory');
+      }
+
+      const pathArray = path.split('/');
+      const folderPath = [...pathArray];
+      const folderName = folderPath.pop();
+      const parrentFolder = this.getFolder(
+        folderPath.length === 1 ? '/' : folderPath.join('/')
+      ).body;
+      const folder = parrentFolder.find(
+        (element) => element.name === folderName && element.type === 'folder'
+      );
+
+      const accessAllowed = this.checkAccess(folder, 'modify');
+
+      if (!accessAllowed) {
+        throw new Error('access denied');
+      }
+
+      const isExists = parrentFolder.find(
+        (element) => element.name === newName
+      );
+
+      if (isExists) {
+        throw new Error('a file with this name already exists');
+      }
+
+      folder.name = newName;
+      return {
+        status: 'successfully',
+        body: true,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
     }
-
-    const pathArray = path.split('/');
-    const folderPath = [...pathArray];
-    const folderName = folderPath.pop();
-    const parrentFolder = this.getFolder(folderPath.join('/'));
-    const folder = parrentFolder.find(
-      (element) => element.name === folderName && element.type === 'folder'
-    );
-    folder.name = newName;
   }
 
   renameFile(path, newName) {
-    const pathArray = path.split('/');
-    const isRootDirectory = pathArray.length === 2;
+    try {
+      const pathArray = path.split('/');
+      const isRootDirectory = pathArray.length === 2;
 
-    if (isRootDirectory) {
-      const fileName = path.slice(1);
-      const extension = fileName.split('.').at(-1);
-      const file = this.virtualDrive.find(
+      if (isRootDirectory) {
+        const fileName = path.slice(1);
+        const file = this.virtualDrive.find(
+          (element) => element.name === fileName && element.type === 'file'
+        );
+
+        const accessAllowed = this.checkAccess(file, 'modify');
+
+        if (!accessAllowed) {
+          throw new Error('access denied');
+        }
+
+        const isExists = this.virtualDrive.find(
+          (element) => element.name === newName
+        );
+
+        if (isExists) {
+          throw new Error('a file with this name already exists');
+        }
+
+        file.name = newName;
+
+        return {
+          status: 'successfully',
+          body: true,
+        };
+      }
+
+      const folderPath = [...pathArray];
+      const fileName = folderPath.pop();
+      const parrentFolder = this.getFolder(folderPath.join('/')).body;
+      const file = parrentFolder.find(
         (element) => element.name === fileName && element.type === 'file'
       );
-      file.name = `${newName}.${extension}`;
-      return;
-    }
 
-    const folderPath = [...pathArray];
-    const fileName = folderPath.pop();
-    const extension = fileName.split('.').at(-1);
-    const parrentFolder = getFolder(folderPath.join('/'));
-    const file = parrentFolder.find(
-      (element) => element.name === fileName && element.type === 'file'
-    );
-    file.name = `${newName}.${extension}`;
+      const accessAllowed = this.checkAccess(file, 'modify');
+
+      if (!accessAllowed) {
+        throw new Error('access denied');
+      }
+
+      const isExists = parrentFolder.find(
+        (element) => element.name === newName
+      );
+
+      if (isExists) {
+        throw new Error('a file with this name already exists');
+      }
+
+      file.name = newName;
+      return {
+        status: 'successfully',
+        body: true,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
   }
 }

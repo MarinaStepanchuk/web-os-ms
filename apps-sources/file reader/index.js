@@ -197,7 +197,7 @@
       switch (type) {
         case 'application':
           item.setAttribute('data-type', 'exe');
-          const appName = file.name.split('.');
+          const appName = file.body.split('/').at(-1).split('.');
           appName.splice(-1, 1);
           const appFolder = driver.readFolder(
             `/apps/${appName.join('.')}`
@@ -281,7 +281,12 @@
   };
 
   const getAppNameByPath = (path) => {
-    const app = path.split('/').at(-1).split('.');
+    const app = [...path.split('/').at(-1).split('.')];
+
+    if (app.length === 1) {
+      return app.join('.');
+    }
+
     app.splice(-1, 1);
     return app.join('.');
   };
@@ -289,18 +294,16 @@
   const openFile = (file) => {
     const type = file.getAttribute('data-type');
     const name = file.querySelector('.file-description').innerText;
+    const appPath = file.getAttribute('data-path');
 
     switch (type) {
       case 'folder':
         openFolder(name);
         break;
       case 'exe':
-        const appName = name.split('.');
-        appName.splice(-1, 1);
-        executor.startApp(appName.join('.'));
+        executor.startApp(getAppNameByPath(appPath));
         break;
       case 'label':
-        const appPath = file.getAttribute('data-path');
         executor.startApp(getAppNameByPath(appPath));
         break;
       case 'image':
@@ -450,16 +453,29 @@
       case 'Delete':
         closeContextMenus();
         await deleteFile(fileElement);
+      case 'Rename':
+        closeContextMenus();
+        renameFile(fileElement);
     }
   }
 
-  async function deleteFile(fileElement) {
+  function getFileOptionsFromFileElement(fileElement) {
     const type =
       fileElement.getAttribute('data-type') === 'folder' ? 'folder' : 'file';
     const fileName = fileElement.querySelector('.file-description').innerText;
     const filePath = path.length
       ? `/${path.join('/')}/${fileName}`
       : `/${fileName}`;
+
+    return {
+      type,
+      fileName,
+      filePath,
+    };
+  }
+
+  async function deleteFile(fileElement) {
+    const { type, filePath } = getFileOptionsFromFileElement(fileElement);
 
     const result =
       type === 'folder'
@@ -471,6 +487,61 @@
       fillFileReaderBody(path);
     } else {
       alert(result.message);
+    }
+  }
+
+  function renameFile(fileElement) {
+    const { type, fileName, filePath } =
+      getFileOptionsFromFileElement(fileElement);
+
+    const description = fileElement.querySelector('.file-description');
+
+    const inputName = document.createElement('input');
+    inputName.classList.add('input-new-name');
+    inputName.value = fileName;
+    description.replaceWith(inputName);
+    inputName.focus();
+
+    inputName.addEventListener('blur', reverseNameChange);
+
+    inputName.addEventListener('keypress', async (event) => {
+      if (event.key === 'Enter') {
+        event.target.removeEventListener('blut', reverseNameChange);
+        await saveNewFileName(type, fileName, filePath);
+      }
+    });
+  }
+
+  function reverseNameChange(event) {
+    const newDescription = document.createElement('p');
+    newDescription.classList.add('file-description');
+    newDescription.innerText = fileName;
+    event.target.replaceWith(newDescription);
+  }
+
+  async function saveNewFileName(type, fileName, filePath) {
+    const input = document.querySelector('.input-new-name');
+
+    const newDescription = document.createElement('p');
+    newDescription.classList.add('file-description');
+    newDescription.innerText = fileName;
+    const newFileName = input.value.trim();
+
+    if (newFileName !== fileName) {
+      const result =
+        type === 'folder'
+          ? driver.renameFolder(filePath, newFileName)
+          : driver.renameFile(filePath, newFileName);
+
+      if (result.status === 'successfully') {
+        await driver.updateDrive();
+        newDescription.innerText = newFileName;
+        fillFileReaderBody(path);
+      } else {
+        input.removeEventListener('blur', reverseNameChange);
+        alert(result.message);
+        input.replaceWith(newDescription);
+      }
     }
   }
 })();

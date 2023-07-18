@@ -107,10 +107,10 @@ class Msvhd {
   }
 
   renameFile(path, newName) {
-    this.hardDrive.renameFile(path, newName);
+    return this.hardDrive.renameFile(path, newName);
   }
 
   renameFolder(path, newName) {
-    this.hardDrive.renameFolder(path, newName);
+    return this.hardDrive.renameFolder(path, newName);
   }
 }

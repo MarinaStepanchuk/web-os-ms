@@ -179,6 +179,14 @@
   border-radius: 5px;
 }
 
+#file-reader .file-list .input-new-name {
+  width: 100%;
+  outline: none;
+  border: none;
+  background-color: transparent;
+  border-bottom: 1px solid #3b3a3a;
+}
+
 #file-reader .file-list .icon {
   width: 100px;
   height: 80px;
