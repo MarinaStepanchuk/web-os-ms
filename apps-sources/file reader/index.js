@@ -506,7 +506,7 @@
 
     inputName.addEventListener('keypress', async (event) => {
       if (event.key === 'Enter') {
-        event.target.removeEventListener('blut', reverseNameChange);
+        event.target.removeEventListener('blur', reverseNameChange);
         await saveNewFileName(type, fileName, filePath);
       }
     });
