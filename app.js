@@ -28,8 +28,12 @@ app.get('/load-drive', (req, res) => {
 });
 
 app.post('/update-drive', (req, res) => {
-  updateDrive(req.body.virtualDrive);
-  res.json('success');
+  try {
+    updateDrive(req.body.virtualDrive);
+    res.json({ status: 'successfully', body: true });
+  } catch (error) {
+    res.status(500).json({ message: 'server error' });
+  }
 });
 
 const start = async () => {

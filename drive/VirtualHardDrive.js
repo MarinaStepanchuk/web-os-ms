@@ -27,14 +27,26 @@ class VirtualHardDrive {
     this.setDrive(drive);
   }
 
-  checkAccess(file) {
+  checkAccess(file, type) {
     const { creator, access } = file.accessRights;
     const activeUser = hardDrive.getActiveUser();
-    return (
-      creator === activeUser ||
-      access.reed.includes('all') ||
-      access.reed.includes(activeUser)
-    );
+
+    switch (type) {
+      case 'read':
+        return (
+          creator === activeUser ||
+          access.reed.includes('all') ||
+          access.reed.includes(activeUser)
+        );
+      case 'modify':
+        return (
+          creator === activeUser ||
+          access.modify.includes('all') ||
+          access.modify.includes(activeUser)
+        );
+      default:
+        return false;
+    }
   }
 
   getFile(path) {
@@ -51,7 +63,7 @@ class VirtualHardDrive {
           throw new Error('file not found');
         }
 
-        const accessAllowed = this.checkAccess(file);
+        const accessAllowed = this.checkAccess(file, 'read');
 
         if (!accessAllowed) {
           throw new Error('access denied');
@@ -76,7 +88,7 @@ class VirtualHardDrive {
         throw new Error('file not found');
       }
 
-      const accessAllowed = this.checkAccess(file);
+      const accessAllowed = this.checkAccess(file, 'read');
 
       if (!accessAllowed) {
         throw new Error('access denied');
@@ -106,7 +118,7 @@ class VirtualHardDrive {
         );
 
         if (folder) {
-          const accessAllowed = this.checkAccess(folder);
+          const accessAllowed = this.checkAccess(folder, 'read');
 
           if (!accessAllowed) {
             throw new Error('access denied');
@@ -161,43 +173,85 @@ class VirtualHardDrive {
   }
 
   removeFile(path) {
-    const pathArray = path.split('/');
-    const isRootDirectory = pathArray.length === 2;
+    try {
+      const pathArray = path.split('/');
+      const isRootDirectory = pathArray.length === 2;
 
-    if (isRootDirectory) {
-      const fileName = path.slice(1);
-      const index = this.virtualDrive.findIndex(
+      if (isRootDirectory) {
+        const fileName = path.slice(1);
+        const index = this.virtualDrive.findIndex(
+          (element) => element.name === fileName && element.type === 'file'
+        );
+        this.virtualDrive.splice(index, 1);
+        return;
+      }
+
+      const folderPath = [...pathArray];
+      const fileName = folderPath.pop();
+      const parrentFolder = this.getFolder(folderPath.join('/')).body;
+      const file = parrentFolder.find(
         (element) => element.name === fileName && element.type === 'file'
       );
-      this.virtualDrive.splice(index, 1);
-      return;
-    }
+      const accessAllowed = this.checkAccess(file, 'modify');
 
-    const folderPath = [...pathArray];
-    const fileName = folderPath.pop();
-    const parrentFolder = this.getFolder(folderPath.join('/'));
-    const index = parrentFolder.findIndex(
-      (element) => element.name === fileName && element.type === 'file'
-    );
-    parrentFolder.splice(index, 1);
+      if (!accessAllowed) {
+        throw new Error('access denied');
+      }
+
+      const index = parrentFolder.findIndex(
+        (element) => element.name === fileName && element.type === 'file'
+      );
+      parrentFolder.splice(index, 1);
+
+      return {
+        status: 'successfully',
+        body: true,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
   }
 
   removeFolder(path) {
-    const isRootDirectory = path === '/';
+    try {
+      const isRootDirectory = path === '/';
 
-    if (isRootDirectory) {
-      this.virtualDrive = [];
-      return;
+      if (isRootDirectory) {
+        throw new Error('deleting the root directory is forbidden');
+      }
+
+      const pathArray = path.split('/');
+      const folderPath = [...pathArray];
+      const folderName = folderPath.pop();
+      const parrentFolder = this.getFolder(folderPath.join('/'));
+      const folder = parrentFolder.find(
+        (element) => element.name === folderName && element.type === 'folder'
+      );
+
+      const accessAllowed = this.checkAccess(folder, 'modify');
+
+      if (!accessAllowed) {
+        throw new Error('access denied');
+      }
+
+      const index = parrentFolder.findIndex(
+        (element) => element.name === folderName && element.type === 'folder'
+      );
+      parrentFolder.splice(index, 1);
+
+      return {
+        status: 'successfully',
+        body: true,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
     }
-
-    const pathArray = path.split('/');
-    const folderPath = [...pathArray];
-    const folderName = folderPath.pop();
-    const parrentFolder = this.getFolder(folderPath.join('/'));
-    const index = parrentFolder.findIndex(
-      (element) => element.name === folderName && element.type === 'folder'
-    );
-    parrentFolder.splice(index, 1);
   }
 
   updateFile(path, newFile) {

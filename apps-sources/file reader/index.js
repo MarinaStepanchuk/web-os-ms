@@ -1,5 +1,5 @@
 (() => {
-  const icons = driver.readFolder('/apps/file reader/assets/icons').body;
+  const filesIcons = driver.readFolder('/apps/file reader/assets/icons').body;
 
   const rootElement = document.getElementById('file-reader');
   let fullScreenMode = false;
@@ -138,11 +138,11 @@
 
     if (path.length === 0) {
       pathIcon.style.backgroundImage = `url(${
-        icons.find((item) => item.name === 'home.png').body
+        filesIcons.find((item) => item.name === 'home.png').body
       })`;
     } else {
       pathIcon.style.backgroundImage = `url(${
-        icons.find((item) => item.name === 'folder.png').body
+        filesIcons.find((item) => item.name === 'folder.png').body
       })`;
     }
 
@@ -170,7 +170,90 @@
   filesContainer.classList.add('file-list');
   appWrapper.append(filesContainer);
 
-  const defaultIcons = driver.readFolder('/apps/default icons').body;
+  const createFileItem = (file) => {
+    const item = document.createElement('div');
+    item.classList.add('file-item');
+
+    if (!file.accessRights.public) {
+      item.classList.add('hide');
+      item.setAttribute('data-visibility', 'hidden');
+    }
+
+    const icon = document.createElement('div');
+    icon.classList.add('icon');
+    const description = document.createElement('p');
+    description.classList.add('file-description');
+    description.innerText = file.name;
+
+    if (file.type === 'folder') {
+      item.setAttribute('data-type', 'folder');
+      icon.style.backgroundImage = `url(${
+        filesIcons.find((element) => element.name === 'folder.png').body
+      })`;
+    } else {
+      const type = file.mime.split('/')[0];
+      item.setAttribute('data-type', type);
+
+      switch (type) {
+        case 'application':
+          item.setAttribute('data-type', 'exe');
+          const appName = file.name.split('.');
+          appName.splice(-1, 1);
+          const appFolder = driver.readFolder(
+            `/apps/${appName.join('.')}`
+          ).body;
+          const iconUrl = appFolder.find(
+            (element) => element.name === 'icon.png' && element.type === 'file'
+          ).body;
+          item.setAttribute('data-path', `/apps/${appName}`);
+          icon.style.backgroundImage = `url(${iconUrl})`;
+          break;
+        case 'image':
+          item.setAttribute('data-type', 'image');
+          icon.style.backgroundImage = `url(${file.body})`;
+          break;
+        case 'video':
+          item.setAttribute('data-type', 'video');
+          icon.style.backgroundImage = `url(${
+            filesIcons.find((element) => element.name === 'video.png').body
+          })`;
+          break;
+        case 'audio':
+          item.setAttribute('data-type', 'audio');
+          icon.style.backgroundImage = `url(${
+            filesIcons.find((element) => element.name === 'audio.png').body
+          })`;
+          break;
+        case 'text':
+          item.setAttribute('data-type', 'text');
+          icon.style.backgroundImage = `url(${
+            filesIcons.find((element) => element.name === 'text.png').body
+          })`;
+          break;
+        case 'label':
+          item.setAttribute('data-type', 'label');
+          item.setAttribute('data-path', file.body);
+          const pathArray = file.body.split('/');
+          pathArray.splice(-1, 1);
+          const urlIcon = driver
+            .readFolder(pathArray.join('/'))
+            .body.find(
+              (item) => item.name === 'icon.png' && item.type === 'file'
+            ).body;
+          icon.style.backgroundImage = `url(${urlIcon})`;
+          break;
+        default:
+          item.setAttribute('data-type', 'unknown');
+          icon.style.backgroundImage = `url(${
+            filesIcons.find((element) => element.name === 'unknown.png').body
+          })`;
+          break;
+      }
+    }
+
+    item.append(icon, description);
+    filesContainer.append(item);
+  };
 
   function fillFileReaderBody(path) {
     const pathString = path.join('/');
@@ -186,92 +269,7 @@
     const fileList = document.querySelector('.file-list');
     fileList.innerHTML = '';
 
-    files.body.forEach((file) => {
-      const item = document.createElement('div');
-      item.classList.add('file-item');
-
-      if (!file.accessRights.public) {
-        item.classList.add('hide');
-        item.setAttribute('data-visibility', 'hidden');
-      }
-
-      const icon = document.createElement('div');
-      icon.classList.add('icon');
-      const description = document.createElement('p');
-      description.classList.add('file-description');
-      description.innerText = file.name;
-
-      if (file.type === 'folder') {
-        item.setAttribute('data-type', 'folder');
-        icon.style.backgroundImage = `url(${
-          icons.find((element) => element.name === 'folder.png').body
-        })`;
-      } else {
-        const type = file.mime.split('/')[0];
-        item.setAttribute('data-type', type);
-
-        switch (type) {
-          case 'application':
-            item.setAttribute('data-type', 'exe');
-            const appName = file.name.split('.');
-            appName.splice(-1, 1);
-            const appFolder = driver.readFolder(
-              `/apps/${appName.join('.')}`
-            ).body;
-            const iconUrl = appFolder.find(
-              (element) =>
-                element.name === 'icon.png' && element.type === 'file'
-            ).body;
-            item.setAttribute('data-path', `/apps/${appName}`);
-            icon.style.backgroundImage = `url(${iconUrl})`;
-            break;
-          case 'image':
-            item.setAttribute('data-type', 'image');
-            icon.style.backgroundImage = `url(${file.body})`;
-            break;
-          case 'video':
-            item.setAttribute('data-type', 'video');
-            icon.style.backgroundImage = `url(${
-              defaultIcons.find((element) => element.name === 'video.icon').body
-            })`;
-            break;
-          case 'audio':
-            item.setAttribute('data-type', 'audio');
-            icon.style.backgroundImage = `url(${
-              defaultIcons.find((element) => element.name === 'audio.icon').body
-            })`;
-            break;
-          case 'text':
-            item.setAttribute('data-type', 'text');
-            icon.style.backgroundImage = `url(${
-              defaultIcons.find((element) => element.name === 'text.icon').body
-            })`;
-            break;
-          case 'label':
-            item.setAttribute('data-type', 'label');
-            item.setAttribute('data-path', file.body);
-            const pathArray = file.body.split('/');
-            pathArray.splice(-1, 1);
-            const urlIcon = driver
-              .readFolder(pathArray.join('/'))
-              .body.find(
-                (item) => item.name === 'icon.png' && item.type === 'file'
-              ).body;
-            icon.style.backgroundImage = `url(${urlIcon})`;
-            break;
-          default:
-            item.setAttribute('data-type', 'unknown');
-            icon.style.backgroundImage = `url(${
-              defaultIcons.find((element) => element.name === 'unknown.icon')
-                .body
-            })`;
-            break;
-        }
-      }
-
-      item.append(icon, description);
-      filesContainer.append(item);
-    });
+    files.body.forEach((file) => createFileItem(file));
   }
 
   fillFileReaderBody(path);
@@ -288,15 +286,15 @@
     return app.join('.');
   };
 
-  filesContainer.addEventListener('dblclick', (event) => {
-    const icon = event.target.closest('[data-type]');
+  const openFile = (event) => {
+    const file = event.target.closest('[data-type]');
 
-    if (!icon) {
+    if (!file) {
       return;
     }
 
-    const type = icon.getAttribute('data-type');
-    const name = icon.querySelector('.file-description').innerText;
+    const type = file.getAttribute('data-type');
+    const name = file.querySelector('.file-description').innerText;
 
     switch (type) {
       case 'folder':
@@ -308,7 +306,7 @@
         executor.startApp(appName.join('.'));
         break;
       case 'label':
-        const appPath = icon.getAttribute('data-path');
+        const appPath = file.getAttribute('data-path');
         executor.startApp(getAppNameByPath(appPath));
         break;
       case 'image':
@@ -327,5 +325,123 @@
         alert('Unknown extension');
         break;
     }
+
+    return;
+  };
+
+  filesContainer.addEventListener('click', () => {
+    const openMenus = document.querySelectorAll('.context-menu');
+
+    if (openMenus.length) {
+      openMenus.forEach((item) => item.remove());
+    }
   });
+
+  filesContainer.addEventListener('dblclick', (event) => openFile(event));
+
+  filesContainer.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+
+    if (event.target.closest('.file-item')) {
+      openFileContextMenu(event);
+      return;
+    }
+
+    openCommonContextMenu(event);
+  });
+
+  function openFileContextMenu(event) {
+    const openMenus = document.querySelectorAll('.context-menu');
+
+    if (openMenus.length) {
+      openMenus.forEach((item) => item.remove());
+    }
+
+    const fileElement = event.target.closest('.file-item');
+    const menu = document.createElement('ul');
+    menu.classList.add('file-context-menu');
+    menu.classList.add('context-menu');
+    const buttons = ['open', 'rename', 'copy', 'cut', 'delete'];
+    buttons.forEach((item) => {
+      const button = document.createElement('li');
+      button.innerText = item;
+      button.classList.add(item.split(' ').join('-'));
+      menu.append(button);
+    });
+    rootElement.append(menu);
+
+    const rectMenu = menu.getBoundingClientRect();
+    const rectContainer = rootElement.getBoundingClientRect();
+    const windowHeight = document.body.clientHeight;
+    const windowWidth = document.body.clientWidth;
+
+    if (rectMenu.height > windowHeight - event.clientY) {
+      menu.style.top = `${
+        event.clientY - rectContainer.top - rectMenu.height
+      }px`;
+    } else {
+      menu.style.top = `${event.clientY - rectContainer.top}px`;
+    }
+
+    if (rectMenu.width > windowWidth - event.clientX) {
+      menu.style.left = `${
+        event.clientX - rectContainer.left - rectMenu.width
+      }px`;
+    } else {
+      menu.style.left = `${event.clientX - rectContainer.left}px`;
+    }
+
+    menu.addEventListener('click', (event) => {
+      console.log(event.target);
+    });
+  }
+
+  function openCommonContextMenu(event) {
+    const openMenus = document.querySelectorAll('.context-menu');
+
+    if (openMenus.length) {
+      openMenus.forEach((item) => item.remove());
+    }
+
+    const menu = document.createElement('ul');
+    menu.classList.add('common-context-menu');
+    menu.classList.add('context-menu');
+    const buttons = ['paste', 'load file', 'load folder'];
+    buttons.forEach((item) => {
+      const button = document.createElement('li');
+      button.innerText = item;
+      button.classList.add(item.split(' ').join('-'));
+      menu.append(button);
+    });
+    rootElement.append(menu);
+
+    const rectMenu = menu.getBoundingClientRect();
+    const rectContainer = rootElement.getBoundingClientRect();
+    const windowHeight = document.body.clientHeight;
+    const windowWidth = document.body.clientWidth;
+
+    if (rectMenu.height > windowHeight - event.clientY) {
+      menu.style.top = `${
+        event.clientY - rectContainer.top - rectMenu.height
+      }px`;
+    } else {
+      menu.style.top = `${event.clientY - rectContainer.top}px`;
+    }
+
+    if (rectMenu.width > windowWidth - event.clientX) {
+      menu.style.left = `${
+        event.clientX - rectContainer.left - rectMenu.width
+      }px`;
+    } else {
+      menu.style.left = `${event.clientX - rectContainer.left}px`;
+    }
+
+    menu.addEventListener('click', (event) => {
+      const actionType = event.target.innerText;
+
+      takeActionByType(actionType);
+    });
+  }
+
+  function takeActionByType(type) {}
 })();

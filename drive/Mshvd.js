@@ -50,9 +50,13 @@ class Msvhd {
           'Content-Type': 'application/json;charset=utf-8',
         },
       });
-      const res = await response.json();
+      const result = await response.json();
+      return result;
     } catch (error) {
-      console.log(error);
+      return {
+        status: 'error',
+        message: error.message,
+      };
     }
   }
 
@@ -82,11 +86,11 @@ class Msvhd {
   }
 
   deleteFile(path) {
-    this.hardDrive.removeFile(path);
+    return this.hardDrive.removeFile(path);
   }
 
   deleteFolder(path) {
-    this.hardDrive.removeFolder(path);
+    return this.hardDrive.removeFolder(path);
   }
 
   async updateFile(path, file) {
