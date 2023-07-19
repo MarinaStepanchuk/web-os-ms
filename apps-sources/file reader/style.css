@@ -10,12 +10,11 @@
   align-items: center;
   justify-content: space-around;
   background-color: rgb(232, 232, 232);
-  border-radius: 15px;
   color: #212121;
   font-size: 15px;
   box-sizing: border-box;
   cursor: default;
-  border: 1px solid #d0d0d0;
+  border: 1px solid #bebebe;
 }
 
 #file-reader .file-reader-wrapper {
@@ -247,4 +246,8 @@
 #file-reader .file-context-menu li::first-letter,
 #file-reader .common-context-menu li::first-letter {
   text-transform: uppercase;
+}
+
+#file-reader .copied {
+  opacity: 0.5;
 }

@@ -85,7 +85,7 @@ class VirtualHardDrive {
       );
 
       if (!file) {
-        throw new Error('file not found');
+        throw new Error(`file ${fileName} not found`);
       }
 
       const accessAllowed = this.checkAccess(file, 'read');
@@ -126,7 +126,7 @@ class VirtualHardDrive {
 
           return folder.children;
         } else {
-          throw new Error('folder not found');
+          throw new Error(`folder ${item} not found`);
         }
       }, this.virtualDrive);
 
@@ -151,25 +151,46 @@ class VirtualHardDrive {
     getFolder(path).push(newFile);
   }
 
+  checkFileExist(path, name) {
+    return !!this.getFolder(path === '/' ? `/${name}` : `${path}/${name}`).body;
+  }
+
   writeFolder(path, name) {
-    const folderExists = !!this.getFolder(
-      path === '/' ? `/${name}` : `${path}/${name}`
-    );
+    try {
+      let folderExists = this.checkFileExist(path, name);
+      let count = 0;
+      let newName = name;
 
-    if (folderExists) {
-      throw new Error('Folder with this name already exists');
+      while (folderExists) {
+        count++;
+        newName = `${name}${count}`;
+        folderExists = this.checkFileExist(path, newName);
+      }
+
+      const newFolder = {
+        id: Date.now(),
+        name: newName,
+        type: 'folder',
+        accessRights: {
+          creator: this.#activeUser,
+          public: true,
+          access: {
+            reed: [],
+            modify: [],
+          },
+        },
+        children: [],
+      };
+
+      this.getFolder(path).body.push(newFolder);
+
+      return { status: 'successfully', body: newFolder };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
     }
-
-    const newFolder = {
-      id: Date.now(),
-      name: name,
-      type: 'folder',
-      children: [],
-    };
-
-    this.getFolder(path).push(newFolder);
-
-    return;
   }
 
   removeFile(path) {

@@ -82,7 +82,7 @@ class Msvhd {
   }
 
   createFolder(path, name) {
-    this.hardDrive.writeFolder(path, name);
+    return this.hardDrive.writeFolder(path, name);
   }
 
   deleteFile(path) {

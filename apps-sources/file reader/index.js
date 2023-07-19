@@ -1,6 +1,15 @@
 (() => {
   const filesIcons = driver.readFolder('/apps/file reader/assets/icons').body;
 
+  let path = [];
+
+  const history = {
+    position: 0,
+    memory: [[]],
+  };
+
+  let previousNameFile = '';
+
   const rootElement = document.getElementById('file-reader');
   let fullScreenMode = false;
 
@@ -42,13 +51,6 @@
     }
     fullScreenMode = !fullScreenMode;
   });
-
-  let path = [];
-
-  const history = {
-    position: 0,
-    memory: [[]],
-  };
 
   const navigatePanel = document.createElement('nav');
   navigatePanel.classList.add('navigation-panel');
@@ -112,6 +114,9 @@
     }
 
     const position = pathItem.getAttribute('data-position');
+    if (history.position !== history.memory.length - 1) {
+      history.memory.push([...path]);
+    }
 
     if (!position) {
       path = [];
@@ -125,7 +130,7 @@
     }
 
     const newPath = [...path].slice(0, position);
-    path = newPath;
+    path = [...newPath];
     addHistoryPath(path);
     fillFileReaderBody(path);
   });
@@ -197,7 +202,7 @@
       switch (type) {
         case 'application':
           item.setAttribute('data-type', 'exe');
-          const appName = file.body.split('/').at(-1).split('.');
+          const appName = file.name.split('.');
           appName.splice(-1, 1);
           const appFolder = driver.readFolder(
             `/apps/${appName.join('.')}`
@@ -280,7 +285,12 @@
     const folderIsOpen = fillFileReaderBody(path);
 
     if (folderIsOpen) {
-      addHistoryPath(path);
+      if (history.position !== history.memory.length - 1) {
+        addHistoryPath(history.memory[history.position]);
+        addHistoryPath(path);
+      } else {
+        addHistoryPath(path);
+      }
     } else {
       path.pop();
     }
@@ -343,7 +353,9 @@
     closeContextMenus();
     deselectFiles();
     const file = event.target.closest('.file-item');
-    file.classList.add('active-item');
+    if (file) {
+      file.classList.add('active-item');
+    }
   });
 
   filesContainer.addEventListener('dblclick', (event) => {
@@ -427,7 +439,7 @@
     const menu = document.createElement('ul');
     menu.classList.add('common-context-menu');
     menu.classList.add('context-menu');
-    const buttons = ['paste', 'load file', 'load folder'];
+    const buttons = ['paste', 'load file', 'create folder'];
     buttons.forEach((item) => {
       const button = document.createElement('li');
       button.innerText = item;
@@ -459,23 +471,86 @@
 
     menu.addEventListener('click', async (event) => {
       const actionType = event.target.innerText;
-
+      action = actionType;
       await takeActionByType(actionType);
     });
   }
 
   async function takeActionByType(type, fileElement) {
+    closeContextMenus();
+
     switch (type) {
       case 'Open':
         openFile(fileElement);
-        closeContextMenus();
         break;
       case 'Delete':
-        closeContextMenus();
         await deleteFile(fileElement);
+        break;
       case 'Rename':
-        closeContextMenus();
         renameFile(fileElement);
+        break;
+      case 'Load file':
+        break;
+      case 'Create folder':
+        addNewFolder();
+        break;
+    }
+  }
+
+  function addNewFolder() {
+    const newFolder = document.createElement('div');
+    newFolder.classList.add('file-item');
+    newFolder.classList.add('new-folder');
+    newFolder.setAttribute('data-type', 'folder');
+    const fileList = document.querySelector('.file-list');
+    fileList.append(newFolder);
+    const icon = document.createElement('div');
+    icon.classList.add('icon');
+    icon.style.backgroundImage = `url(${
+      filesIcons.find((element) => element.name === 'folder.png').body
+    })`;
+    const inputName = document.createElement('input');
+    inputName.classList.add('input-new-name');
+    newFolder.append(icon, inputName);
+    inputName.focus();
+
+    inputName.addEventListener('blur', saveFolder);
+
+    inputName.addEventListener('keydown', async (event) => {
+      if (event.key === 'Enter') {
+        event.target.removeEventListener('blur', saveFolder);
+        await saveFolder(event);
+      }
+
+      if (event.key === 'Escape') {
+        event.target.removeEventListener('blur', saveFolder);
+        saveDefaultFolder(event);
+      }
+    });
+  }
+
+  async function saveFolder(event) {
+    const input = event.target;
+    const description = document.createElement('p');
+    description.classList.add('file-description');
+    const fileName = input.value.trim();
+
+    const result = driver.createFolder(
+      `/${path.join('/')}`,
+      fileName || 'New file'
+    );
+
+    if (result.status === 'successfully') {
+      await driver.updateDrive();
+      const newFolder = result.body;
+      description.innerText = newFolder.name;
+      input.replaceWith(description);
+      fillFileReaderBody(path);
+    } else {
+      input.removeEventListener('blur', saveDefaultFolder);
+      alert(result.message);
+      const newFolderElement = document.querySelector('.new-folder');
+      newFolderElement.remove();
     }
   }
 
@@ -510,8 +585,6 @@
     }
   }
 
-  let renamedPreviousName = '';
-
   function renameFile(fileElement) {
     const { type, fileName, filePath } =
       getFileOptionsFromFileElement(fileElement);
@@ -520,7 +593,7 @@
 
     const inputName = document.createElement('input');
     inputName.classList.add('input-new-name');
-    renamedPreviousName = fileName;
+    previousNameFile = fileName;
     inputName.value = fileName;
     description.replaceWith(inputName);
     inputName.focus();
@@ -542,7 +615,7 @@
 
   function reverseNameChange() {
     const inputName = document.querySelector('.input-new-name');
-    const fileName = renamedPreviousName;
+    const fileName = previousNameFile;
     const newDescription = document.createElement('p');
     newDescription.classList.add('file-description');
     newDescription.innerText = fileName;
