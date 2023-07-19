@@ -209,6 +209,14 @@
   display: none;
 }
 
+#file-reader .file-item.active-item {
+  background-color: #93929261;
+}
+
+#file-reader .file-item.active-item:hover {
+  background-color: #93929261;
+}
+
 #file-reader .file-context-menu,
 #file-reader .common-context-menu {
   position: absolute;

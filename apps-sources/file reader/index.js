@@ -261,7 +261,7 @@
 
     if (files.status === 'error') {
       alert(files.message);
-      return;
+      return false;
     }
 
     fillPath();
@@ -270,14 +270,20 @@
     fileList.innerHTML = '';
 
     files.body.forEach((file) => createFileItem(file));
+    return true;
   }
 
   fillFileReaderBody(path);
 
   const openFolder = (folderName) => {
     path.push(folderName);
-    addHistoryPath(path);
-    fillFileReaderBody(path);
+    const folderIsOpen = fillFileReaderBody(path);
+
+    if (folderIsOpen) {
+      addHistoryPath(path);
+    } else {
+      path.pop();
+    }
   };
 
   const getAppNameByPath = (path) => {
@@ -326,8 +332,18 @@
     return;
   };
 
-  filesContainer.addEventListener('click', () => {
+  function deselectFiles() {
+    const selectedElements = document.querySelectorAll('.active-item');
+    selectedElements.forEach((element) =>
+      element.classList.remove('active-item')
+    );
+  }
+
+  filesContainer.addEventListener('click', (event) => {
     closeContextMenus();
+    deselectFiles();
+    const file = event.target.closest('.file-item');
+    file.classList.add('active-item');
   });
 
   filesContainer.addEventListener('dblclick', (event) => {
@@ -342,8 +358,12 @@
 
   filesContainer.addEventListener('contextmenu', (event) => {
     event.preventDefault();
+    deselectFiles();
 
-    if (event.target.closest('.file-item')) {
+    const file = event.target.closest('.file-item');
+
+    if (file) {
+      file.classList.add('active-item');
       openFileContextMenu(event);
       return;
     }
@@ -490,6 +510,8 @@
     }
   }
 
+  let renamedPreviousName = '';
+
   function renameFile(fileElement) {
     const { type, fileName, filePath } =
       getFileOptionsFromFileElement(fileElement);
@@ -498,25 +520,33 @@
 
     const inputName = document.createElement('input');
     inputName.classList.add('input-new-name');
+    renamedPreviousName = fileName;
     inputName.value = fileName;
     description.replaceWith(inputName);
     inputName.focus();
 
     inputName.addEventListener('blur', reverseNameChange);
 
-    inputName.addEventListener('keypress', async (event) => {
+    inputName.addEventListener('keydown', async (event) => {
       if (event.key === 'Enter') {
         event.target.removeEventListener('blur', reverseNameChange);
         await saveNewFileName(type, fileName, filePath);
       }
+
+      if (event.key === 'Escape') {
+        event.target.removeEventListener('blur', reverseNameChange);
+        reverseNameChange();
+      }
     });
   }
 
-  function reverseNameChange(event) {
+  function reverseNameChange() {
+    const inputName = document.querySelector('.input-new-name');
+    const fileName = renamedPreviousName;
     const newDescription = document.createElement('p');
     newDescription.classList.add('file-description');
     newDescription.innerText = fileName;
-    event.target.replaceWith(newDescription);
+    inputName.replaceWith(newDescription);
   }
 
   async function saveNewFileName(type, fileName, filePath) {
