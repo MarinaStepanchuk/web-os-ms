@@ -140,9 +140,7 @@ class VirtualHardDrive {
   }
 
   writeFile(path, newFile) {
-    const fileExists = !!this.getFile(
-      path === '/' ? `${path}${newFile.name}` : `${path}/${newFile.name}`
-    );
+    const fileExists = this.checkFileExist(path, newFile.name);
 
     if (fileExists) {
       throw new Error('File with this name already exists');
@@ -152,19 +150,26 @@ class VirtualHardDrive {
   }
 
   checkFileExist(path, name) {
-    return !!this.getFolder(path === '/' ? `/${name}` : `${path}/${name}`).body;
+    return !!this.getFile(path === '/' ? `${path}${name}` : `${path}/${name}`)
+      .body;
+  }
+
+  checkFolderExist(path, name) {
+    return !!this.getFolder(path === '/' ? `${path}${name}` : `${path}/${name}`)
+      .body;
   }
 
   writeFolder(path, name) {
     try {
-      let folderExists = this.checkFileExist(path, name);
+      const parentFolder = this.getFolder(path).body;
+      let folderExists = parentFolder.find((item) => item.name === name);
       let count = 0;
       let newName = name;
 
       while (folderExists) {
         count++;
         newName = `${name}${count}`;
-        folderExists = this.checkFileExist(path, newName);
+        folderExists = parentFolder.find((item) => item.name === newName);
       }
 
       const newFolder = {
@@ -400,6 +405,139 @@ class VirtualHardDrive {
       return {
         status: 'successfully',
         body: true,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
+  }
+
+  copyFile(file) {
+    try {
+      const accessAllowed = this.checkAccess(file, 'read');
+
+      if (!accessAllowed) {
+        throw new Error('access denied');
+      }
+
+      return { status: 'successfully', body: file };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
+  }
+
+  pasteFile(pastePath, bufer, previousAction) {
+    try {
+      const folder = this.getFolder(pastePath).body;
+      const file = bufer.file;
+      const buferFilePath = bufer.path;
+
+      if (!folder) {
+        throw new Error('copy error');
+      }
+
+      let fileExists = folder.find((item) => item.name === file.name);
+      let count = 0;
+      const fileNameArray = file.name.split('.');
+      fileNameArray.pop();
+      const fileName = fileNameArray.join('.');
+      const extension = file.name.split('.').at(-1);
+      let newName = file.name;
+
+      while (fileExists) {
+        newName = `${fileName}(copy${count || ''})`;
+        fileExists = folder.find(
+          (item) => item.name === `${newName}.${extension}`
+        );
+        count++;
+      }
+
+      const newFile = {
+        ...file,
+        name: `${newName}.${extension}`,
+        accessRights: {
+          creator: hardDrive.#activeUser,
+          public: true,
+          access: {
+            reed: [],
+            modify: [],
+          },
+        },
+      };
+
+      folder.push(newFile);
+
+      if (previousAction === 'cut') {
+        this.removeFile(
+          buferFilePath === '/'
+            ? `${buferFilePath}${file.name}`
+            : `${buferFilePath}/${file.name}`
+        );
+      }
+
+      return {
+        status: 'successfully',
+        body: newFile,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
+  }
+
+  pasteFolder(pastePath, bufer, previousAction) {
+    try {
+      const folder = this.getFolder(pastePath).body;
+      const file = bufer.file;
+      const buferFilePath = bufer.path;
+
+      if (!folder) {
+        throw new Error('copy error');
+      }
+
+      let fileExists = folder.find((item) => item.name === file.name);
+      let count = 0;
+      let newName = file.name;
+
+      while (fileExists) {
+        newName = `${file.name}(copy${count || ''})`;
+        fileExists = folder.find((item) => item.name === newName);
+        count++;
+      }
+
+      const newFile = {
+        ...file,
+        name: newName,
+        accessRights: {
+          creator: hardDrive.#activeUser,
+          public: true,
+          access: {
+            reed: [],
+            modify: [],
+          },
+        },
+      };
+
+      folder.push(newFile);
+
+      if (previousAction === 'cut') {
+        this.removeFolder(
+          buferFilePath === '/'
+            ? `${buferFilePath}${file.name}`
+            : `${buferFilePath}/${file.name}`
+        );
+      }
+
+      return {
+        status: 'successfully',
+        body: newFile,
       };
     } catch (error) {
       return {

@@ -10,6 +10,8 @@
 
   let previousNameFile = '';
 
+  let actionType = '';
+
   const rootElement = document.getElementById('file-reader');
   let fullScreenMode = false;
 
@@ -274,7 +276,31 @@
     const fileList = document.querySelector('.file-list');
     fileList.innerHTML = '';
 
-    files.body.forEach((file) => createFileItem(file));
+    const foldersElements = files.body
+      .filter((item) => item.type === 'folder')
+      .sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        if (nameA < nameB) return -1;
+        if (nameA > nameB) {
+          return 1;
+        }
+        return 0;
+      });
+    const filesElements = files.body
+      .filter((item) => item.type === 'file')
+      .sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        if (nameA < nameB) return -1;
+        if (nameA > nameB) {
+          return 1;
+        }
+        return 0;
+      });
+
+    foldersElements.forEach((file) => createFileItem(file));
+    filesElements.forEach((file) => createFileItem(file));
     return true;
   }
 
@@ -394,11 +420,16 @@
   function openFileContextMenu(event) {
     closeContextMenus();
     const fileElement = event.target.closest('.file-item');
+    const type = fileElement.getAttribute('data-type');
     const menu = document.createElement('ul');
     menu.classList.add('file-context-menu');
     menu.classList.add('context-menu');
-    const buttons = ['open', 'rename', 'copy', 'cut', 'delete'];
+    const buttons = ['open', 'rename', 'copy', 'cut', 'paste', 'delete'];
     buttons.forEach((item) => {
+      if (item === 'paste' && type !== 'folder') {
+        return;
+      }
+
       const button = document.createElement('li');
       button.innerText = item;
       button.classList.add(item.split(' ').join('-'));
@@ -494,7 +525,124 @@
       case 'Create folder':
         addNewFolder();
         break;
+      case 'Copy':
+        copyFile(fileElement);
+        break;
+      case 'Paste':
+        pasteFile(fileElement);
+        break;
+      case 'Cut':
+        cutFile(fileElement);
+        break;
     }
+  }
+
+  function copyFile(fileElement) {
+    actionType = 'copy';
+    copyFileInBufer(fileElement);
+  }
+
+  function cutFile(fileElement) {
+    actionType = 'cut';
+    copyFileInBufer(fileElement);
+  }
+
+  function copyFileInBufer(fileElement) {
+    const selectedFIles = filesContainer.querySelectorAll('.copied');
+    selectedFIles.forEach((item) => item.classList.remove('copied'));
+
+    fileElement.classList.add('copied');
+    const type = fileElement.getAttribute('data-type');
+    const fileName = fileElement.querySelector('.file-description').innerText;
+
+    if (type === 'folder') {
+      const parentFolderPath = `/${path.join('/')}`;
+      const resultSearch = driver.readFolder(parentFolderPath);
+      const parentFolder = resultSearch.body;
+
+      if (parentFolder) {
+        const folder = parentFolder.find((item) => item.name === fileName);
+        const copyResult = driver.copyFile(
+          folder,
+          path.length === 0 ? '/' : `/${path.join('/')}`
+        );
+
+        if (copyResult.status === 'error') {
+          alert(copyResult.message);
+          fileElement.classList.remove('copied');
+        }
+      } else {
+        alert(resultSearch.message);
+        fileElement.classList.remove('copied');
+      }
+    } else {
+      const filePath =
+        path.length === 0 ? `/${fileName}` : `/${path.join('/')}/${fileName}`;
+      const resultSearch = driver.readFile(filePath);
+      const file = resultSearch.body;
+
+      if (file) {
+        driver.copyFile(file, path.length === 0 ? '/' : `/${path.join('/')}`);
+      } else {
+        alert(resultSearch.message);
+        fileElement.classList.remove('copied');
+      }
+    }
+  }
+
+  async function pasteFile(fileElement) {
+    const bufer = driver.getFileFromBufer();
+
+    if (!bufer) {
+      return;
+    }
+
+    if (fileElement) {
+      const fileName = fileElement.querySelector('.file-description').innerText;
+      const filePath =
+        path.length === 0 ? `/${fileName}` : `/${path.join('/')}/${fileName}`;
+
+      if (bufer.path === filePath && actionType === 'cut') {
+        const selectedFIles = filesContainer.querySelectorAll('.copied');
+        selectedFIles.forEach((item) => item.classList.remove('copied'));
+        return;
+      }
+
+      const result =
+        bufer.file.type === 'folder'
+          ? driver.pasteFolder(filePath, actionType)
+          : driver.pasteFile(filePath, actionType);
+
+      if (result.status === 'successfully') {
+        await driver.updateDrive();
+      } else {
+        alert(result.message);
+      }
+
+      return;
+    }
+
+    const filePath = path.length === 0 ? `/` : `/${path.join('/')}`;
+
+    if (bufer.path === filePath && actionType === 'cut') {
+      const selectedFIles = filesContainer.querySelectorAll('.copied');
+      selectedFIles.forEach((item) => item.classList.remove('copied'));
+      return;
+    }
+
+    const result =
+      driver.getFileFromBufer().file.type === 'folder'
+        ? driver.pasteFolder(filePath, actionType)
+        : driver.pasteFile(filePath, actionType);
+
+    if (result.status === 'successfully') {
+      await driver.updateDrive();
+      fillFileReaderBody(path);
+    } else {
+      alert(result.message);
+    }
+
+    return;
   }
 
   function addNewFolder() {
@@ -514,6 +662,16 @@
     newFolder.append(icon, inputName);
     inputName.focus();
 
+    inputName.addEventListener('input', (event) => {
+      if (/[\\,\/,:,\*,\?,",<,>,\|]/g.test(event.target.value)) {
+        event.target.value = event.target.value.replace(
+          /[\\,\/,:,\*,\?,",<,>,\|]/g,
+          ''
+        );
+        alert('A file name cannot include the following characters *<|>?:/');
+      }
+    });
+
     inputName.addEventListener('blur', saveFolder);
 
     inputName.addEventListener('keydown', async (event) => {
@@ -524,7 +682,7 @@
 
       if (event.key === 'Escape') {
         event.target.removeEventListener('blur', saveFolder);
-        saveDefaultFolder(event);
+        saveFolder(event);
       }
     });
   }
@@ -547,7 +705,7 @@
       input.replaceWith(description);
       fillFileReaderBody(path);
     } else {
-      input.removeEventListener('blur', saveDefaultFolder);
+      input.removeEventListener('blur', saveFolder);
       alert(result.message);
       const newFolderElement = document.querySelector('.new-folder');
       newFolderElement.remove();
@@ -597,6 +755,16 @@
     inputName.value = fileName;
     description.replaceWith(inputName);
     inputName.focus();
+
+    inputName.addEventListener('input', (event) => {
+      if (/[\\,\/,:,\*,\?,",<,>,\|]/g.test(event.target.value)) {
+        event.target.value = event.target.value.replace(
+          /[\\,\/,:,\*,\?,",<,>,\|]/g,
+          ''
+        );
+        alert('A file name cannot include the following characters *<|>?:/');
+      }
+    });
 
     inputName.addEventListener('blur', reverseNameChange);
 
