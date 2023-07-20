@@ -1,4 +1,5 @@
 (() => {
+  driver.addOpenApp('file reader');
   const filesIcons = driver.readFolder('/apps/file reader/assets/icons').body;
 
   let path = [];
@@ -368,16 +369,21 @@
     return;
   };
 
-  function deselectFiles() {
+  function deselectActiveFiles() {
     const selectedElements = document.querySelectorAll('.active-item');
     selectedElements.forEach((element) =>
       element.classList.remove('active-item')
     );
   }
 
+  function deselectCopyFiles() {
+    const copiedFiles = filesContainer.querySelectorAll('.copied');
+    copiedFiles.forEach((item) => item.classList.remove('copied'));
+  }
+
   filesContainer.addEventListener('click', (event) => {
     closeContextMenus();
-    deselectFiles();
+    deselectActiveFiles();
     const file = event.target.closest('.file-item');
     if (file) {
       file.classList.add('active-item');
@@ -385,7 +391,7 @@
   });
 
   filesContainer.addEventListener('dblclick', (event) => {
-    const file = event.target.closest('[data-type]');
+    const file = event.target.closest('.file-item');
 
     if (!file) {
       return;
@@ -396,12 +402,17 @@
 
   filesContainer.addEventListener('contextmenu', (event) => {
     event.preventDefault();
-    deselectFiles();
+    const selectedFiles = filesContainer.querySelectorAll('.active-item');
+
+    if (selectedFiles.length === 1) {
+      selectedFiles.forEach((element) =>
+        element.classList.remove('active-item')
+      );
+    }
 
     const file = event.target.closest('.file-item');
 
     if (file) {
-      file.classList.add('active-item');
       openFileContextMenu(event);
       return;
     }
@@ -411,22 +422,26 @@
 
   function closeContextMenus() {
     const openMenus = document.querySelectorAll('.context-menu');
-
-    if (openMenus.length) {
-      openMenus.forEach((item) => item.remove());
-    }
+    openMenus.forEach((item) => item.remove());
   }
 
   function openFileContextMenu(event) {
     closeContextMenus();
-    const fileElement = event.target.closest('.file-item');
-    const type = fileElement.getAttribute('data-type');
+    const clickedElement = event.target.closest('.file-item');
+    if (!clickedElement.classList.contains('active-item')) {
+      clickedElement.classList.add('active-item');
+    }
+    const selectedFiles = filesContainer.querySelectorAll('.active-item');
+    const type = clickedElement.getAttribute('data-type');
     const menu = document.createElement('ul');
     menu.classList.add('file-context-menu');
     menu.classList.add('context-menu');
     const buttons = ['open', 'rename', 'copy', 'cut', 'paste', 'delete'];
     buttons.forEach((item) => {
-      if (item === 'paste' && type !== 'folder') {
+      if (
+        (item === 'paste' && type !== 'folder') ||
+        (item === 'paste' && selectedFiles.length > 1)
+      ) {
         return;
       }
 
@@ -437,119 +452,101 @@
     });
     rootElement.append(menu);
 
-    const rectMenu = menu.getBoundingClientRect();
-    const rectContainer = rootElement.getBoundingClientRect();
-    const windowHeight = document.body.clientHeight;
-    const windowWidth = document.body.clientWidth;
-
-    if (rectMenu.height > windowHeight - event.clientY) {
-      menu.style.top = `${
-        event.clientY - rectContainer.top - rectMenu.height
-      }px`;
-    } else {
-      menu.style.top = `${event.clientY - rectContainer.top}px`;
-    }
-
-    if (rectMenu.width > windowWidth - event.clientX) {
-      menu.style.left = `${
-        event.clientX - rectContainer.left - rectMenu.width
-      }px`;
-    } else {
-      menu.style.left = `${event.clientX - rectContainer.left}px`;
-    }
+    menuPositioning(event, menu);
 
     menu.addEventListener('click', async (event) => {
-      const actionType = event.target.innerText;
+      closeContextMenus();
+      const actionType = event.target.innerText.toLowerCase();
 
-      await takeActionByType(actionType, fileElement);
+      await takeActionByType(actionType, selectedFiles, clickedElement);
     });
   }
 
-  function openCommonContextMenu(event) {
+  async function takeActionByType(type, selectedFiles, clickedElement) {
     closeContextMenus();
-    const menu = document.createElement('ul');
-    menu.classList.add('common-context-menu');
-    menu.classList.add('context-menu');
-    const buttons = ['paste', 'load file', 'create folder'];
-    buttons.forEach((item) => {
-      const button = document.createElement('li');
-      button.innerText = item;
-      button.classList.add(item.split(' ').join('-'));
-      menu.append(button);
-    });
-    rootElement.append(menu);
-
-    const rectMenu = menu.getBoundingClientRect();
-    const rectContainer = rootElement.getBoundingClientRect();
-    const windowHeight = document.body.clientHeight;
-    const windowWidth = document.body.clientWidth;
-
-    if (rectMenu.height > windowHeight - event.clientY) {
-      menu.style.top = `${
-        event.clientY - rectContainer.top - rectMenu.height
-      }px`;
-    } else {
-      menu.style.top = `${event.clientY - rectContainer.top}px`;
-    }
-
-    if (rectMenu.width > windowWidth - event.clientX) {
-      menu.style.left = `${
-        event.clientX - rectContainer.left - rectMenu.width
-      }px`;
-    } else {
-      menu.style.left = `${event.clientX - rectContainer.left}px`;
-    }
-
-    menu.addEventListener('click', async (event) => {
-      const actionType = event.target.innerText;
-      action = actionType;
-      await takeActionByType(actionType);
-    });
-  }
-
-  async function takeActionByType(type, fileElement) {
-    closeContextMenus();
-
     switch (type) {
-      case 'Open':
-        openFile(fileElement);
+      case 'open':
+        selectedFiles.forEach((file) => openFile(file));
+        deselectActiveFiles();
         break;
-      case 'Delete':
-        await deleteFile(fileElement);
+      case 'delete':
+        for (const file of selectedFiles) {
+          await deleteFile(file);
+        }
         break;
-      case 'Rename':
-        renameFile(fileElement);
+      case 'rename':
+        renameFile(clickedElement);
         break;
-      case 'Load file':
+      case 'copy':
+        copyFiles(selectedFiles);
         break;
-      case 'Create folder':
-        addNewFolder();
+      case 'paste':
+        await pasteFiles(clickedElement);
         break;
-      case 'Copy':
-        copyFile(fileElement);
-        break;
-      case 'Paste':
-        pasteFile(fileElement);
-        break;
-      case 'Cut':
-        cutFile(fileElement);
+      case 'cut':
+        cutFile(selectedFiles);
         break;
     }
   }
 
-  function copyFile(fileElement) {
-    actionType = 'copy';
-    copyFileInBufer(fileElement);
+  function menuPositioning(event, menu) {
+    const rectMenu = menu.getBoundingClientRect();
+    const rectContainer = rootElement.getBoundingClientRect();
+    const windowHeight = document.body.clientHeight;
+    const windowWidth = document.body.clientWidth;
+
+    if (rectMenu.height > windowHeight - event.clientY) {
+      menu.style.top = `${
+        event.clientY - rectContainer.top - rectMenu.height
+      }px`;
+    } else {
+      menu.style.top = `${event.clientY - rectContainer.top}px`;
+    }
+
+    if (rectMenu.width > windowWidth - event.clientX) {
+      menu.style.left = `${
+        event.clientX - rectContainer.left - rectMenu.width
+      }px`;
+    } else {
+      menu.style.left = `${event.clientX - rectContainer.left}px`;
+    }
   }
 
-  function cutFile(fileElement) {
+  document.addEventListener('keydown', (event) => {
+    if (
+      event.getModifierState('Control') &&
+      (event.key === 'c' || 'C') &&
+      driver.getOpenApps().at(-1) === 'file reader'
+    ) {
+      driver.clearBufer();
+      const selectedFiles = filesContainer.querySelectorAll('.active-item');
+      selectedFiles.forEach((element) => copyFile(element));
+    }
+
+    if (
+      event.getModifierState('Control') &&
+      (event.key === 'v' || 'V') &&
+      driver.getOpenApps().at(-1) === 'file reader'
+    ) {
+      const selectedFiles = filesContainer.querySelectorAll('.active-item');
+      selectedFiles.forEach((element) => copyFile(element));
+    }
+  });
+
+  function copyFiles(selectedFiles) {
+    actionType = 'copy';
+    driver.clearBufer();
+    selectedFiles.forEach((file) => copyFileInBufer(file));
+  }
+
+  function cutFile(selectedFiles) {
     actionType = 'cut';
-    copyFileInBufer(fileElement);
+    driver.clearBufer();
+    selectedFiles.forEach((file) => copyFileInBufer(file));
   }
 
   function copyFileInBufer(fileElement) {
-    const selectedFIles = filesContainer.querySelectorAll('.copied');
-    selectedFIles.forEach((item) => item.classList.remove('copied'));
+    deselectActiveFiles();
 
     fileElement.classList.add('copied');
     const type = fileElement.getAttribute('data-type');
@@ -590,126 +587,65 @@
     }
   }
 
-  async function pasteFile(fileElement) {
+  async function pasteFiles(clickedFolder) {
     const bufer = driver.getFileFromBufer();
 
-    if (!bufer) {
+    if (!bufer.length) {
       return;
     }
 
-    if (fileElement) {
-      const fileName = fileElement.querySelector('.file-description').innerText;
+    deselectActiveFiles();
+
+    if (clickedFolder) {
+      const folderName =
+        clickedFolder.querySelector('.file-description').innerText;
       const filePath =
-        path.length === 0 ? `/${fileName}` : `/${path.join('/')}/${fileName}`;
+        path.length === 0
+          ? `/${folderName}`
+          : `/${path.join('/')}/${folderName}`;
 
-      if (bufer.path === filePath && actionType === 'cut') {
-        const selectedFIles = filesContainer.querySelectorAll('.copied');
-        selectedFIles.forEach((item) => item.classList.remove('copied'));
-        return;
+      for (const buferItem of bufer) {
+        console.log(filePath, buferItem);
+        if (buferItem.path === filePath && actionType === 'cut') {
+          deselectCopyFiles();
+          return;
+        }
+
+        const result =
+          buferItem.file.type === 'folder'
+            ? driver.pasteFolder(filePath, buferItem, actionType)
+            : driver.pasteFile(filePath, buferItem, actionType);
+
+        if (result.status === 'error') {
+          alert(result.message);
+        }
       }
 
-      const result =
-        bufer.file.type === 'folder'
-          ? driver.pasteFolder(filePath, actionType)
-          : driver.pasteFile(filePath, actionType);
-
-      if (result.status === 'successfully') {
-        await driver.updateDrive();
-      } else {
-        alert(result.message);
-      }
-
+      await driver.updateDrive();
       return;
     }
 
     const filePath = path.length === 0 ? `/` : `/${path.join('/')}`;
 
-    if (bufer.path === filePath && actionType === 'cut') {
-      const selectedFIles = filesContainer.querySelectorAll('.copied');
-      selectedFIles.forEach((item) => item.classList.remove('copied'));
-      return;
+    for (const buferItem of bufer) {
+      if (buferItem.path === filePath && actionType === 'cut') {
+        deselectCopyFiles();
+        return;
+      }
+
+      const result =
+        buferItem.file.type === 'folder'
+          ? driver.pasteFolder(filePath, buferItem, actionType)
+          : driver.pasteFile(filePath, buferItem, actionType);
+
+      if (result.status === 'error') {
+        alert(result.message);
+      }
     }
 
-    const result =
-      driver.getFileFromBufer().file.type === 'folder'
-        ? driver.pasteFolder(filePath, actionType)
-        : driver.pasteFile(filePath, actionType);
-
-    if (result.status === 'successfully') {
-      await driver.updateDrive();
-      fillFileReaderBody(path);
-    } else {
-      alert(result.message);
-    }
-
+    await driver.updateDrive();
+    fillFileReaderBody(path);
     return;
-  }
-
-  function addNewFolder() {
-    const newFolder = document.createElement('div');
-    newFolder.classList.add('file-item');
-    newFolder.classList.add('new-folder');
-    newFolder.setAttribute('data-type', 'folder');
-    const fileList = document.querySelector('.file-list');
-    fileList.append(newFolder);
-    const icon = document.createElement('div');
-    icon.classList.add('icon');
-    icon.style.backgroundImage = `url(${
-      filesIcons.find((element) => element.name === 'folder.png').body
-    })`;
-    const inputName = document.createElement('input');
-    inputName.classList.add('input-new-name');
-    newFolder.append(icon, inputName);
-    inputName.focus();
-
-    inputName.addEventListener('input', (event) => {
-      if (/[\\,\/,:,\*,\?,",<,>,\|]/g.test(event.target.value)) {
-        event.target.value = event.target.value.replace(
-          /[\\,\/,:,\*,\?,",<,>,\|]/g,
-          ''
-        );
-        alert('A file name cannot include the following characters *<|>?:/');
-      }
-    });
-
-    inputName.addEventListener('blur', saveFolder);
-
-    inputName.addEventListener('keydown', async (event) => {
-      if (event.key === 'Enter') {
-        event.target.removeEventListener('blur', saveFolder);
-        await saveFolder(event);
-      }
-
-      if (event.key === 'Escape') {
-        event.target.removeEventListener('blur', saveFolder);
-        saveFolder(event);
-      }
-    });
-  }
-
-  async function saveFolder(event) {
-    const input = event.target;
-    const description = document.createElement('p');
-    description.classList.add('file-description');
-    const fileName = input.value.trim();
-
-    const result = driver.createFolder(
-      `/${path.join('/')}`,
-      fileName || 'New file'
-    );
-
-    if (result.status === 'successfully') {
-      await driver.updateDrive();
-      const newFolder = result.body;
-      description.innerText = newFolder.name;
-      input.replaceWith(description);
-      fillFileReaderBody(path);
-    } else {
-      input.removeEventListener('blur', saveFolder);
-      alert(result.message);
-      const newFolderElement = document.querySelector('.new-folder');
-      newFolderElement.remove();
-    }
   }
 
   function getFileOptionsFromFileElement(fileElement) {
@@ -744,6 +680,9 @@
   }
 
   function renameFile(fileElement) {
+    deselectActiveFiles();
+    deselectCopyFiles();
+
     const { type, fileName, filePath } =
       getFileOptionsFromFileElement(fileElement);
 
@@ -813,6 +752,105 @@
         alert(result.message);
         input.replaceWith(newDescription);
       }
+    }
+  }
+
+  function openCommonContextMenu(event) {
+    closeContextMenus();
+    const menu = document.createElement('ul');
+    menu.classList.add('common-context-menu');
+    menu.classList.add('context-menu');
+    const buttons = ['paste', 'load file', 'create folder'];
+    buttons.forEach((item) => {
+      const button = document.createElement('li');
+      button.innerText = item;
+      button.classList.add(item.split(' ').join('-'));
+      menu.append(button);
+    });
+    rootElement.append(menu);
+
+    menuPositioning(event, menu);
+
+    menu.addEventListener('click', async (event) => {
+      closeContextMenus();
+      const actionType = event.target.innerText.toLowerCase();
+      if (actionType === 'create folder') {
+        addNewFolder();
+      }
+
+      if (actionType === 'load file') {
+      }
+
+      if (actionType === 'paste') {
+        pasteFiles();
+      }
+    });
+  }
+
+  function addNewFolder() {
+    const newFolder = document.createElement('div');
+    newFolder.classList.add('file-item');
+    newFolder.classList.add('new-folder');
+    newFolder.setAttribute('data-type', 'folder');
+    const fileList = document.querySelector('.file-list');
+    fileList.append(newFolder);
+    const icon = document.createElement('div');
+    icon.classList.add('icon');
+    icon.style.backgroundImage = `url(${
+      filesIcons.find((element) => element.name === 'folder.png').body
+    })`;
+    const inputName = document.createElement('input');
+    inputName.classList.add('input-new-name');
+    newFolder.append(icon, inputName);
+    inputName.focus();
+
+    inputName.addEventListener('input', (event) => {
+      if (/[\\,\/,:,\*,\?,",<,>,\|]/g.test(event.target.value)) {
+        event.target.value = event.target.value.replace(
+          /[\\,\/,:,\*,\?,",<,>,\|]/g,
+          ''
+        );
+        alert('A file name cannot include the following characters *<|>?:/');
+      }
+    });
+
+    inputName.addEventListener('blur', saveFolder);
+
+    inputName.addEventListener('keydown', async (event) => {
+      if (event.key === 'Enter') {
+        event.target.removeEventListener('blur', saveFolder);
+        await saveFolder(event);
+      }
+
+      if (event.key === 'Escape') {
+        event.target.removeEventListener('blur', saveFolder);
+        saveFolder(event);
+      }
+    });
+  }
+
+  async function saveFolder(event) {
+    const input = event.target;
+    const description = document.createElement('p');
+    description.classList.add('file-description');
+    const fileName = input.value.trim();
+
+    const result = driver.createFolder(
+      `/${path.join('/')}`,
+      fileName || 'New file'
+    );
+
+    if (result.status === 'successfully') {
+      await driver.updateDrive();
+      const newFolder = result.body;
+      description.innerText = newFolder.name;
+      input.replaceWith(description);
+      fillFileReaderBody(path);
+    } else {
+      input.removeEventListener('blur', saveFolder);
+      alert(result.message);
+      const newFolderElement = document.querySelector('.new-folder');
+      newFolderElement.remove();
     }
   }
 })();

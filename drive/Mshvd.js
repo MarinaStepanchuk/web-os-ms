@@ -20,7 +20,7 @@ const convertBase64 = (file) => {
 
 class Msvhd {
   #openApps = [];
-  #bufer = null;
+  #bufer = [];
 
   constructor() {
     this.hardDrive = new VirtualHardDrive();
@@ -32,7 +32,7 @@ class Msvhd {
 
   setFileInBufer(file, path) {
     const buferFile = { ...file };
-    this.#bufer = { file: buferFile, path };
+    this.#bufer.push({ file: buferFile, path });
   }
 
   setActiveUser(name) {
@@ -40,7 +40,7 @@ class Msvhd {
   }
 
   clearBufer() {
-    this.#bufer = null;
+    this.#bufer = [];
   }
 
   addOpenApp(appName) {
@@ -51,7 +51,7 @@ class Msvhd {
     this.#openApps = this.openApps.filter((app) => app !== appName);
   }
 
-  getOpenApp() {
+  getOpenApps() {
     return this.#openApps;
   }
 
@@ -142,20 +142,20 @@ class Msvhd {
     return result;
   }
 
-  pasteFile(pastePath, previousAction) {
+  pasteFile(pastePath, buferItem, previousAction) {
     const result = this.hardDrive.pasteFile(
       pastePath,
-      this.#bufer,
+      buferItem,
       previousAction
     );
 
     return result;
   }
 
-  pasteFolder(pastePath, previousAction) {
+  pasteFolder(pastePath, buferItem, previousAction) {
     const result = this.hardDrive.pasteFolder(
       pastePath,
-      this.#bufer,
+      buferItem,
       previousAction
     );
 

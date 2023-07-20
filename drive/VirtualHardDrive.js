@@ -177,7 +177,7 @@ class VirtualHardDrive {
         name: newName,
         type: 'folder',
         accessRights: {
-          creator: this.#activeUser,
+          creator: hardDrive.#activeUser,
           public: true,
           access: {
             reed: [],
@@ -447,7 +447,7 @@ class VirtualHardDrive {
       fileNameArray.pop();
       const fileName = fileNameArray.join('.');
       const extension = file.name.split('.').at(-1);
-      let newName = file.name;
+      let newName = fileName;
 
       while (fileExists) {
         newName = `${fileName}(copy${count || ''})`;
