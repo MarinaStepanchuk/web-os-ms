@@ -512,27 +512,6 @@
     }
   }
 
-  document.addEventListener('keydown', (event) => {
-    if (
-      event.getModifierState('Control') &&
-      (event.key === 'c' || 'C') &&
-      driver.getOpenApps().at(-1) === 'file reader'
-    ) {
-      driver.clearBufer();
-      const selectedFiles = filesContainer.querySelectorAll('.active-item');
-      selectedFiles.forEach((element) => copyFile(element));
-    }
-
-    if (
-      event.getModifierState('Control') &&
-      (event.key === 'v' || 'V') &&
-      driver.getOpenApps().at(-1) === 'file reader'
-    ) {
-      const selectedFiles = filesContainer.querySelectorAll('.active-item');
-      selectedFiles.forEach((element) => copyFile(element));
-    }
-  });
-
   function copyFiles(selectedFiles) {
     actionType = 'copy';
     driver.clearBufer();
