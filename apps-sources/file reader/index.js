@@ -12,6 +12,23 @@
 
   let actionType = '';
 
+  const actions = {
+    paste: 'paste',
+    loadFile: 'load file',
+    createFolder: 'create folder',
+    open: 'open',
+    rename: 'rename',
+    copy: 'copy',
+    cut: 'cut',
+    delete: 'delete',
+  };
+
+  let mouseIsDown = false;
+  let mouseDownX = null;
+  let mouseDownY = null;
+  let mouseUpX = null;
+  let mouseUpY = null;
+
   const rootElement = document.getElementById('file-reader');
   let fullScreenMode = false;
 
@@ -339,34 +356,23 @@
     const name = file.querySelector('.file-description').innerText;
     const appPath = file.getAttribute('data-path');
 
-    switch (type) {
-      case 'folder':
-        openFolder(name);
-        break;
-      case 'exe':
-        executor.startApp(getAppNameByPath(appPath));
-        break;
-      case 'label':
-        executor.startApp(getAppNameByPath(appPath));
-        break;
-      case 'image':
-        executor.startApp('photos');
-        break;
-      case 'video':
-        executor.startApp('media player');
-        break;
-      case 'audio':
-        executor.startApp('audio player');
-        break;
-      case 'text':
-        executor.startApp('notepad');
-        break;
-      default:
-        alert('Unknown extension');
-        break;
-    }
+    const openingByTypeMap = {
+      folder: () => openFolder(name),
+      exe: () => executor.startApp(getAppNameByPath(appPath)),
+      label: () => executor.startApp(getAppNameByPath(appPath)),
+      image: () => executor.startApp('photos'),
+      video: () => executor.startApp('media player'),
+      audio: () => executor.startApp('audio player'),
+      text: () => executor.startApp('notepad'),
+      unknown: () => alert('Unknown extension'),
+    };
 
-    return;
+    const action = openingByTypeMap[type];
+    if (action) {
+      openingByTypeMap[type]();
+    } else {
+      openingByTypeMap.unknown();
+    }
   };
 
   function deselectActiveFiles() {
@@ -383,7 +389,11 @@
 
   filesContainer.addEventListener('click', (event) => {
     closeContextMenus();
-    deselectActiveFiles();
+
+    if (mouseDownX === event.clientX && mouseDownY === event.clientY) {
+      deselectActiveFiles();
+    }
+
     const file = event.target.closest('.file-item');
     if (file) {
       file.classList.add('active-item');
@@ -436,11 +446,18 @@
     const menu = document.createElement('ul');
     menu.classList.add('file-context-menu');
     menu.classList.add('context-menu');
-    const buttons = ['open', 'rename', 'copy', 'cut', 'paste', 'delete'];
+    const buttons = [
+      actions.open,
+      actions.rename,
+      actions.copy,
+      actions.cut,
+      actions.paste,
+      actions.delete,
+    ];
     buttons.forEach((item) => {
       if (
-        (item === 'paste' && type !== 'folder') ||
-        (item === 'paste' && selectedFiles.length > 1)
+        (item === actions.paste && type !== 'folder') ||
+        (item === actions.paste && selectedFiles.length > 1)
       ) {
         return;
       }
@@ -464,29 +481,24 @@
 
   async function takeActionByType(type, selectedFiles, clickedElement) {
     closeContextMenus();
-    switch (type) {
-      case 'open':
-        selectedFiles.forEach((file) => openFile(file));
+
+    const executionByTypeMap = {
+      [actions.open]: () => {
+        selectedFiles.forEach(openFile);
         deselectActiveFiles();
-        break;
-      case 'delete':
+      },
+      [actions.delete]: async () => {
         for (const file of selectedFiles) {
           await deleteFile(file);
         }
-        break;
-      case 'rename':
-        renameFile(clickedElement);
-        break;
-      case 'copy':
-        copyFiles(selectedFiles);
-        break;
-      case 'paste':
-        await pasteFiles(clickedElement);
-        break;
-      case 'cut':
-        cutFile(selectedFiles);
-        break;
-    }
+      },
+      [actions.rename]: () => renameFile(clickedElement),
+      [actions.paste]: () => pasteFiles(clickedElement),
+      [actions.copy]: () => copyFiles(selectedFiles),
+      [actions.cut]: () => cutFile(selectedFiles),
+    };
+
+    executionByTypeMap[type]?.();
   }
 
   function menuPositioning(event, menu) {
@@ -513,16 +525,37 @@
   }
 
   function copyFiles(selectedFiles) {
-    actionType = 'copy';
+    actionType = actions.copy;
     driver.clearBufer();
     selectedFiles.forEach((file) => copyFileInBufer(file));
   }
 
   function cutFile(selectedFiles) {
-    actionType = 'cut';
+    actionType = actions.cut;
     driver.clearBufer();
     selectedFiles.forEach((file) => copyFileInBufer(file));
   }
+
+  // document.addEventListener('keydown', (event) => {
+  //   if (
+  //     event.getModifierState('Control') &&
+  //     (event.key === 'c' || 'C') &&
+  //     driver.getOpenApps().at(-1) === 'file reader'
+  //   ) {
+  //     driver.clearBufer();
+  //     const selectedFiles = filesContainer.querySelectorAll('.active-item');
+  //     selectedFiles.forEach((element) => copyFile(element));
+  //   }
+
+  //   if (
+  //     event.getModifierState('Control') &&
+  //     (event.key === 'v' || 'V') &&
+  //     driver.getOpenApps().at(-1) === 'file reader'
+  //   ) {
+  //     const selectedFiles = filesContainer.querySelectorAll('.active-item');
+  //     selectedFiles.forEach((element) => copyFile(element));
+  //   }
+  // });
 
   function copyFileInBufer(fileElement) {
     deselectActiveFiles();
@@ -738,7 +771,7 @@
     const menu = document.createElement('ul');
     menu.classList.add('common-context-menu');
     menu.classList.add('context-menu');
-    const buttons = ['paste', 'load file', 'create folder'];
+    const buttons = [actions.paste, actions.loadFile, actions.createFolder];
     buttons.forEach((item) => {
       const button = document.createElement('li');
       button.innerText = item;
@@ -752,14 +785,14 @@
     menu.addEventListener('click', async (event) => {
       closeContextMenus();
       const actionType = event.target.innerText.toLowerCase();
-      if (actionType === 'create folder') {
+      if (actionType === actions.createFolder) {
         addNewFolder();
       }
 
-      if (actionType === 'load file') {
+      if (actionType === actions.loadFile) {
       }
 
-      if (actionType === 'paste') {
+      if (actionType === actions.paste) {
         pasteFiles();
       }
     });
@@ -832,17 +865,14 @@
     }
   }
 
-  let mouseIsDown = false;
-  let mouseDownX = null;
-  let mouseDownY = null;
-  let mouseUpX = null;
-  let mouseUpY = null;
+  let filesCollection = null;
 
   document.addEventListener('mousedown', (event) => {
     if (!driver.getOpenApps().at(-1) === 'file reader') {
       return;
     }
 
+    filesCollection = [...filesContainer.querySelectorAll('.file-item')];
     const existingArea = document.querySelector('.selected-area');
 
     if (existingArea) {
@@ -852,55 +882,201 @@
     mouseIsDown = true;
     mouseDownX = event.clientX;
     mouseDownY = event.clientY;
+
+    if (cursorOutsideApp()) {
+      controlPanel.style.opacity = 0.5;
+      return;
+    }
+
+    controlPanel.style.opacity = 1;
     const selectedArea = document.createElement('div');
     selectedArea.classList.add('selected-area');
     filesContainer.append(selectedArea);
   });
 
+  function cursorOutsideApp() {
+    const rectContainer = filesContainer.getBoundingClientRect();
+    return (
+      mouseDownX > rectContainer.right ||
+      mouseDownX < rectContainer.left ||
+      mouseDownY < rectContainer.top ||
+      mouseDownY > rectContainer.bottom
+    );
+  }
+
   document.addEventListener('mousemove', (event) => {
     if (!driver.getOpenApps().at(-1) === 'file reader' || !mouseIsDown) {
       return;
     }
-    const selectedArea = filesContainer.querySelector('.selected-area');
-    const rectFilesContainer = filesContainer.getBoundingClientRect();
-    const rectRootElement = rootElement.getBoundingClientRect();
 
-    if (event.clientX < mouseDownX) {
-      const width =
-        event.clientX > rectRootElement.left
-          ? mouseDownX - event.clientX
-          : mouseDownX - rectRootElement.left;
-      selectedArea.style.width = `${width}px`;
-      selectedArea.style.left =
-        event.clientX > rectRootElement.left
-          ? `${mouseDownX - rectRootElement.left - width}px`
-          : '-1px';
+    rootElement.classList.add('unselected-text');
+
+    filesCollection.forEach((element) => {
+      element.classList.add('disabled-hover');
+    });
+
+    horizontalPositioningSelectedArea(event);
+
+    const containerHasScroll =
+      filesContainer.scrollHeight !== filesContainer.offsetHeight;
+
+    if (containerHasScroll) {
+      verticalPositionSelectedAreaWithScroll(event);
     } else {
-      selectedArea.style.left = `${mouseDownX - rectRootElement.left}px`;
-      selectedArea.style.width =
-        event.clientX < rectRootElement.right
-          ? `${event.clientX - mouseDownX}px`
-          : `${rectRootElement.right - mouseDownX}px`;
+      verticalPositionSelectedAreaWithoutScroll(event);
     }
 
-    if (event.clientY < mouseDownY) {
+    const selectedArea = filesContainer.querySelector('.selected-area');
+    const rectArea = selectedArea.getBoundingClientRect();
+    const area = {
+      topLeft: { x: rectArea.left, y: rectArea.top },
+      bottomRight: { x: rectArea.right, y: rectArea.bottom },
+    };
+
+    filesCollection.forEach((item) => {
+      const elementInArea = elementIsInArea(area, item);
+
+      if (elementInArea) {
+        item.classList.add('active-item');
+        return true;
+      } else {
+        item.classList.remove('active-item');
+      }
+    });
+  });
+
+  function verticalPositionSelectedAreaWithScroll(event) {
+    const rectFilesContainer = filesContainer.getBoundingClientRect();
+    const rectRootElement = rootElement.getBoundingClientRect();
+    const selectedArea = filesContainer.querySelector('.selected-area');
+
+    const moveUp = event.clientY < mouseDownY;
+    const canScrollUp =
+      event.clientY < rectFilesContainer.top && filesContainer.scrollTop > 0;
+    const canScrollDown =
+      event.clientY > rectFilesContainer.bottom &&
+      rectFilesContainer.height + filesContainer.scrollTop <
+        filesContainer.scrollHeight;
+
+    if (moveUp) {
+      if (canScrollUp) {
+        filesContainer.scrollBy(0, -5);
+        const height =
+          event.clientY + 5 > rectFilesContainer.top
+            ? mouseDownY - event.clientY + filesContainer.scrollTop
+            : rectFilesContainer.top - mouseDownY + filesContainer.scrollTop;
+        selectedArea.style.top =
+          event.clientY + 5 > rectFilesContainer.top
+            ? `${mouseDownY - rectFilesContainer.top - height}px`
+            : `0px`;
+        selectedArea.style.height = `${height}px`;
+        return;
+      }
+
       const height =
         event.clientY + 5 > rectFilesContainer.top
           ? mouseDownY - event.clientY
-          : rectRootElement.top - mouseDownY;
+          : rectFilesContainer.top - mouseDownY;
       selectedArea.style.top =
         event.clientY + 5 > rectFilesContainer.top
-          ? `${mouseDownY - rectRootElement.top - height}px`
-          : `${rectRootElement.top}px`;
+          ? `${mouseDownY - rectFilesContainer.top - height}px`
+          : `0px`;
       selectedArea.style.height = `${height}px`;
     } else {
-      selectedArea.style.top = `${mouseDownY - rectRootElement.top}px`;
+      if (canScrollDown) {
+        console.log(filesContainer.scrollTop);
+        filesContainer.scrollBy(0, 5);
+        selectedArea.style.top = `${mouseDownY - rectFilesContainer.top}px`;
+        selectedArea.style.height =
+          event.clientY < rectFilesContainer.bottom
+            ? `${event.clientY - mouseDownY + filesContainer.scrollTop}px`
+            : `${
+                rectFilesContainer.bottom -
+                mouseDownY +
+                filesContainer.scrollTop
+              }px`;
+        return;
+      }
+
+      selectedArea.style.top = `${mouseDownY - rectFilesContainer.top}px`;
       selectedArea.style.height =
-        event.clientY < rectRootElement.bottom
+        event.clientY < rectFilesContainer.bottom
           ? `${event.clientY - mouseDownY}px`
-          : `${rectRootElement.bottom - mouseDownY}px`;
+          : `${rectFilesContainer.bottom - mouseDownY}px`;
     }
-  });
+  }
+
+  function horizontalPositioningSelectedArea(event) {
+    const rectContainer = filesContainer.getBoundingClientRect();
+    const selectedArea = filesContainer.querySelector('.selected-area');
+
+    const moveLeft = event.clientX < mouseDownX;
+
+    if (moveLeft) {
+      const cursorInContainer = event.clientX > rectContainer.left;
+      const width = cursorInContainer
+        ? mouseDownX - event.clientX
+        : mouseDownX - rectContainer.left;
+      selectedArea.style.width = `${width}px`;
+      selectedArea.style.left = cursorInContainer
+        ? `${mouseDownX - rectContainer.left - width}px`
+        : '-1px';
+    } else {
+      selectedArea.style.left = `${mouseDownX - rectContainer.left}px`;
+      const cursorInContainer =
+        event.clientX <
+        rectContainer.right -
+          (filesContainer.offsetWidth - filesContainer.clientWidth);
+      selectedArea.style.width = cursorInContainer
+        ? `${event.clientX - mouseDownX}px`
+        : `${
+            rectContainer.right -
+            (filesContainer.offsetWidth - filesContainer.clientWidth) -
+            mouseDownX
+          }px`;
+    }
+  }
+
+  function verticalPositionSelectedAreaWithoutScroll(event) {
+    const rectContainer = filesContainer.getBoundingClientRect();
+    const selectedArea = filesContainer.querySelector('.selected-area');
+
+    const moveUp = event.clientY < mouseDownY;
+
+    if (moveUp) {
+      const cursorInContainer = event.clientY + 5 > rectContainer.top;
+      const height = cursorInContainer
+        ? mouseDownY - event.clientY
+        : rectContainer.top - mouseDownY;
+      selectedArea.style.top = cursorInContainer
+        ? `${mouseDownY - rectContainer.top - height}px`
+        : `0px`;
+      selectedArea.style.height = `${height}px`;
+    } else {
+      selectedArea.style.top = `${mouseDownY - rectContainer.top}px`;
+      const cursorInContainer = event.clientY < rectContainer.bottom;
+      selectedArea.style.height = cursorInContainer
+        ? `${event.clientY - mouseDownY}px`
+        : `${rectContainer.bottom - mouseDownY}px`;
+    }
+  }
+
+  function elementIsInArea(area, object) {
+    const rectElement = object.getBoundingClientRect();
+    const element = {
+      x: rectElement.x,
+      y: rectElement.y,
+      width: rectElement.width,
+      height: rectElement.height,
+    };
+
+    return (
+      element.x < area.bottomRight.x &&
+      element.x + element.width > area.topLeft.x &&
+      element.y < area.bottomRight.y &&
+      element.y + element.height > area.topLeft.y
+    );
+  }
 
   document.addEventListener('mouseup', (event) => {
     if (!driver.getOpenApps().at(-1) === 'file reader') {
@@ -918,5 +1094,14 @@
     mouseIsDown = false;
     mouseUpX = event.clientX;
     mouseUpY = event.clientY;
+    filesCollection.forEach((element) =>
+      element.classList.remove('disabled-hover')
+    );
+
+    rootElement.classList.remove('unselected-text');
+
+    const array = [...filesCollection].filter((item) =>
+      item.classList.contains('active-item')
+    );
   });
 })();
