@@ -1,5 +1,4 @@
 (() => {
-  driver.addOpenApp('file reader');
   const filesIcons = driver.readFolder('/apps/file reader/assets/icons').body;
 
   let path = [];
@@ -17,7 +16,7 @@
   let fullScreenMode = false;
 
   const appWrapper = document.querySelector('.file-reader-wrapper');
-  executor.driver.addOpenApp('file reader');
+  driver.addOpenApp('file reader');
 
   const controlPanel = document.createElement('div');
   controlPanel.classList.add('control-panel');
@@ -110,6 +109,7 @@
   };
 
   pathContainer.addEventListener('click', (event) => {
+    event.preventDefault();
     const pathItem = event.target.closest('.path-item');
 
     if (!pathItem) {
@@ -584,7 +584,6 @@
           : `/${path.join('/')}/${folderName}`;
 
       for (const buferItem of bufer) {
-        console.log(filePath, buferItem);
         if (buferItem.path === filePath && actionType === 'cut') {
           deselectCopyFiles();
           return;
@@ -832,4 +831,92 @@
       newFolderElement.remove();
     }
   }
+
+  let mouseIsDown = false;
+  let mouseDownX = null;
+  let mouseDownY = null;
+  let mouseUpX = null;
+  let mouseUpY = null;
+
+  document.addEventListener('mousedown', (event) => {
+    if (!driver.getOpenApps().at(-1) === 'file reader') {
+      return;
+    }
+
+    const existingArea = document.querySelector('.selected-area');
+
+    if (existingArea) {
+      existingArea.remove();
+    }
+
+    mouseIsDown = true;
+    mouseDownX = event.clientX;
+    mouseDownY = event.clientY;
+    const selectedArea = document.createElement('div');
+    selectedArea.classList.add('selected-area');
+    filesContainer.append(selectedArea);
+  });
+
+  document.addEventListener('mousemove', (event) => {
+    if (!driver.getOpenApps().at(-1) === 'file reader' || !mouseIsDown) {
+      return;
+    }
+    const selectedArea = filesContainer.querySelector('.selected-area');
+    const rectFilesContainer = filesContainer.getBoundingClientRect();
+    const rectRootElement = rootElement.getBoundingClientRect();
+
+    if (event.clientX < mouseDownX) {
+      const width =
+        event.clientX > rectRootElement.left
+          ? mouseDownX - event.clientX
+          : mouseDownX - rectRootElement.left;
+      selectedArea.style.width = `${width}px`;
+      selectedArea.style.left =
+        event.clientX > rectRootElement.left
+          ? `${mouseDownX - rectRootElement.left - width}px`
+          : '-1px';
+    } else {
+      selectedArea.style.left = `${mouseDownX - rectRootElement.left}px`;
+      selectedArea.style.width =
+        event.clientX < rectRootElement.right
+          ? `${event.clientX - mouseDownX}px`
+          : `${rectRootElement.right - mouseDownX}px`;
+    }
+
+    if (event.clientY < mouseDownY) {
+      const height =
+        event.clientY + 5 > rectFilesContainer.top
+          ? mouseDownY - event.clientY
+          : rectRootElement.top - mouseDownY;
+      selectedArea.style.top =
+        event.clientY + 5 > rectFilesContainer.top
+          ? `${mouseDownY - rectRootElement.top - height}px`
+          : `${rectRootElement.top}px`;
+      selectedArea.style.height = `${height}px`;
+    } else {
+      selectedArea.style.top = `${mouseDownY - rectRootElement.top}px`;
+      selectedArea.style.height =
+        event.clientY < rectRootElement.bottom
+          ? `${event.clientY - mouseDownY}px`
+          : `${rectRootElement.bottom - mouseDownY}px`;
+    }
+  });
+
+  document.addEventListener('mouseup', (event) => {
+    if (!driver.getOpenApps().at(-1) === 'file reader') {
+      return;
+    }
+
+    const existingArea = document.querySelector('.selected-area');
+
+    if (existingArea) {
+      existingArea.remove();
+    }
+
+    const rectFilesContainer = filesContainer.getBoundingClientRect();
+
+    mouseIsDown = false;
+    mouseUpX = event.clientX;
+    mouseUpY = event.clientY;
+  });
 })();

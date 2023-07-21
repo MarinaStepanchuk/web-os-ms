@@ -25,6 +25,7 @@
   align-items: center;
   justify-content: flex-start;
   box-sizing: border-box;
+  user-select: none;
 }
 
 #file-reader .control-panel {
@@ -250,4 +251,9 @@
 
 #file-reader .copied {
   opacity: 0.5;
+}
+
+#file-reader .selected-area {
+  position: absolute;
+  background-color: rgba(167, 57, 57, 0.403);
 }
