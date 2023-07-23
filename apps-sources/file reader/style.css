@@ -25,7 +25,7 @@
   align-items: center;
   justify-content: flex-start;
   box-sizing: border-box;
-  /* user-select: none; */
+  user-select: none;
 }
 
 #file-reader .control-panel {
@@ -178,10 +178,6 @@
 #file-reader .file-list .file-item:hover {
   background-color: #ffffff61;
   border-radius: 5px;
-}
-
-#file-reader.unselected-text {
-  user-select: none;
 }
 
 #file-reader .file-list .file-item.disabled-hover {

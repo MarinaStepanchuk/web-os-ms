@@ -26,8 +26,6 @@
   let mouseIsDown = false;
   let mouseDownX = null;
   let mouseDownY = null;
-  let mouseUpX = null;
-  let mouseUpY = null;
 
   const rootElement = document.getElementById('file-reader');
   let fullScreenMode = false;
@@ -57,6 +55,9 @@
   controlPanel.append(turnButton, expandButton, closeButton);
 
   closeButton.addEventListener('click', () => {
+    document.removeEventListener('mousedown', startSelectingArea);
+    document.removeEventListener('mousemove', moveSelectedArea);
+    document.removeEventListener('mouseup', removingSelectedArea);
     executor.closeApp('file reader');
   });
 
@@ -488,9 +489,7 @@
         deselectActiveFiles();
       },
       [actions.delete]: async () => {
-        for (const file of selectedFiles) {
-          await deleteFile(file);
-        }
+        await deleteFiles(selectedFiles);
       },
       [actions.rename]: () => renameFile(clickedElement),
       [actions.paste]: () => pasteFiles(clickedElement),
@@ -674,20 +673,22 @@
     };
   }
 
-  async function deleteFile(fileElement) {
-    const { type, filePath } = getFileOptionsFromFileElement(fileElement);
+  async function deleteFiles(selectedFiles) {
+    for (const file of selectedFiles) {
+      const { type, filePath } = getFileOptionsFromFileElement(file);
 
-    const result =
-      type === 'folder'
-        ? driver.deleteFolder(filePath)
-        : driver.deleteFile(filePath);
+      const result =
+        type === 'folder'
+          ? driver.deleteFolder(filePath)
+          : driver.deleteFile(filePath);
 
-    if (result.status === 'successfully') {
-      await driver.updateDrive();
-      fillFileReaderBody(path);
-    } else {
-      alert(result.message);
+      if (result.status === 'error') {
+        alert(result.message);
+      }
     }
+
+    await driver.updateDrive();
+    fillFileReaderBody(path);
   }
 
   function renameFile(fileElement) {
@@ -866,19 +867,24 @@
   }
 
   let filesCollection = null;
+  let initialScroll = null;
 
-  document.addEventListener('mousedown', (event) => {
-    if (!driver.getOpenApps().at(-1) === 'file reader') {
+  document.addEventListener('mousedown', startSelectingArea);
+  document.addEventListener('mousemove', moveSelectedArea);
+  document.addEventListener('mouseup', removingSelectedArea);
+
+  function startSelectingArea(event) {
+    if (
+      !driver.getOpenApps().at(-1) === 'file reader' ||
+      clickOutsideApp(event)
+    ) {
       return;
     }
 
     filesCollection = [...filesContainer.querySelectorAll('.file-item')];
     const existingArea = document.querySelector('.selected-area');
-
-    if (existingArea) {
-      existingArea.remove();
-    }
-
+    existingArea?.remove();
+    initialScroll = filesContainer.scrollTop;
     mouseIsDown = true;
     mouseDownX = event.clientX;
     mouseDownY = event.clientY;
@@ -892,7 +898,7 @@
     const selectedArea = document.createElement('div');
     selectedArea.classList.add('selected-area');
     filesContainer.append(selectedArea);
-  });
+  }
 
   function cursorOutsideApp() {
     const rectContainer = filesContainer.getBoundingClientRect();
@@ -904,12 +910,12 @@
     );
   }
 
-  document.addEventListener('mousemove', (event) => {
+  function moveSelectedArea(event) {
     if (!driver.getOpenApps().at(-1) === 'file reader' || !mouseIsDown) {
       return;
     }
 
-    rootElement.classList.add('unselected-text');
+    closeContextMenus();
 
     filesCollection.forEach((element) => {
       element.classList.add('disabled-hover');
@@ -917,14 +923,7 @@
 
     horizontalPositioningSelectedArea(event);
 
-    const containerHasScroll =
-      filesContainer.scrollHeight !== filesContainer.offsetHeight;
-
-    if (containerHasScroll) {
-      verticalPositionSelectedAreaWithScroll(event);
-    } else {
-      verticalPositionSelectedAreaWithoutScroll(event);
-    }
+    verticalPositionSelectedArea(event);
 
     const selectedArea = filesContainer.querySelector('.selected-area');
     const rectArea = selectedArea.getBoundingClientRect();
@@ -943,67 +942,17 @@
         item.classList.remove('active-item');
       }
     });
-  });
+    previousClientY = event.clientY;
+  }
 
-  function verticalPositionSelectedAreaWithScroll(event) {
-    const rectFilesContainer = filesContainer.getBoundingClientRect();
-    const rectRootElement = rootElement.getBoundingClientRect();
-    const selectedArea = filesContainer.querySelector('.selected-area');
-
-    const moveUp = event.clientY < mouseDownY;
-    const canScrollUp =
-      event.clientY < rectFilesContainer.top && filesContainer.scrollTop > 0;
-    const canScrollDown =
-      event.clientY > rectFilesContainer.bottom &&
-      rectFilesContainer.height + filesContainer.scrollTop <
-        filesContainer.scrollHeight;
-
-    if (moveUp) {
-      if (canScrollUp) {
-        filesContainer.scrollBy(0, -5);
-        const height =
-          event.clientY + 5 > rectFilesContainer.top
-            ? mouseDownY - event.clientY + filesContainer.scrollTop
-            : rectFilesContainer.top - mouseDownY + filesContainer.scrollTop;
-        selectedArea.style.top =
-          event.clientY + 5 > rectFilesContainer.top
-            ? `${mouseDownY - rectFilesContainer.top - height}px`
-            : `0px`;
-        selectedArea.style.height = `${height}px`;
-        return;
-      }
-
-      const height =
-        event.clientY + 5 > rectFilesContainer.top
-          ? mouseDownY - event.clientY
-          : rectFilesContainer.top - mouseDownY;
-      selectedArea.style.top =
-        event.clientY + 5 > rectFilesContainer.top
-          ? `${mouseDownY - rectFilesContainer.top - height}px`
-          : `0px`;
-      selectedArea.style.height = `${height}px`;
-    } else {
-      if (canScrollDown) {
-        console.log(filesContainer.scrollTop);
-        filesContainer.scrollBy(0, 5);
-        selectedArea.style.top = `${mouseDownY - rectFilesContainer.top}px`;
-        selectedArea.style.height =
-          event.clientY < rectFilesContainer.bottom
-            ? `${event.clientY - mouseDownY + filesContainer.scrollTop}px`
-            : `${
-                rectFilesContainer.bottom -
-                mouseDownY +
-                filesContainer.scrollTop
-              }px`;
-        return;
-      }
-
-      selectedArea.style.top = `${mouseDownY - rectFilesContainer.top}px`;
-      selectedArea.style.height =
-        event.clientY < rectFilesContainer.bottom
-          ? `${event.clientY - mouseDownY}px`
-          : `${rectFilesContainer.bottom - mouseDownY}px`;
-    }
+  function clickOutsideApp(event) {
+    const rectContainer = filesContainer.getBoundingClientRect();
+    return (
+      event.clientX > rectContainer.right ||
+      event.clientX < rectContainer.left ||
+      event.clientY > rectContainer.bottom ||
+      event.clientY < rectContainer.top
+    );
   }
 
   function horizontalPositioningSelectedArea(event) {
@@ -1032,32 +981,58 @@
         : `${
             rectContainer.right -
             (filesContainer.offsetWidth - filesContainer.clientWidth) -
-            mouseDownX
+            mouseDownX -
+            1
           }px`;
     }
   }
 
-  function verticalPositionSelectedAreaWithoutScroll(event) {
-    const rectContainer = filesContainer.getBoundingClientRect();
+  function verticalPositionSelectedArea(event) {
+    const rectFilesContainer = filesContainer.getBoundingClientRect();
     const selectedArea = filesContainer.querySelector('.selected-area');
 
-    const moveUp = event.clientY < mouseDownY;
+    const moveUp =
+      event.clientY + (filesContainer.scrollTop - initialScroll) < mouseDownY;
+    const scrollUp =
+      event.clientY < rectFilesContainer.top && filesContainer.scrollTop > 0;
+    const scrollDown =
+      event.clientY > rectFilesContainer.bottom &&
+      rectFilesContainer.height + filesContainer.scrollTop <
+        filesContainer.scrollHeight + 5;
+
+    if (scrollUp) {
+      filesContainer.scrollBy(0, -5);
+    }
+
+    if (scrollDown) {
+      filesContainer.scrollBy(0, 5);
+    }
 
     if (moveUp) {
-      const cursorInContainer = event.clientY + 5 > rectContainer.top;
-      const height = cursorInContainer
-        ? mouseDownY - event.clientY
-        : rectContainer.top - mouseDownY;
-      selectedArea.style.top = cursorInContainer
-        ? `${mouseDownY - rectContainer.top - height}px`
-        : `0px`;
-      selectedArea.style.height = `${height}px`;
+      selectedArea.style.height = `${
+        mouseDownY - event.clientY + initialScroll - filesContainer.scrollTop
+      }px`;
+
+      selectedArea.style.top = scrollUp
+        ? `${filesContainer.scrollTop}px`
+        : `${
+            event.clientY + filesContainer.scrollTop - rectFilesContainer.top
+          }px`;
     } else {
-      selectedArea.style.top = `${mouseDownY - rectContainer.top}px`;
-      const cursorInContainer = event.clientY < rectContainer.bottom;
-      selectedArea.style.height = cursorInContainer
-        ? `${event.clientY - mouseDownY}px`
-        : `${rectContainer.bottom - mouseDownY}px`;
+      selectedArea.style.top = `${
+        mouseDownY - rectFilesContainer.top + initialScroll
+      }px`;
+      selectedArea.style.height = scrollDown
+        ? `${
+            rectFilesContainer.bottom -
+            mouseDownY +
+            (filesContainer.scrollTop - initialScroll)
+          }px`
+        : `${
+            event.clientY -
+            mouseDownY +
+            (filesContainer.scrollTop - initialScroll)
+          }px`;
     }
   }
 
@@ -1078,30 +1053,17 @@
     );
   }
 
-  document.addEventListener('mouseup', (event) => {
+  function removingSelectedArea() {
     if (!driver.getOpenApps().at(-1) === 'file reader') {
       return;
     }
 
     const existingArea = document.querySelector('.selected-area');
-
-    if (existingArea) {
-      existingArea.remove();
-    }
-
-    const rectFilesContainer = filesContainer.getBoundingClientRect();
+    existingArea?.remove();
 
     mouseIsDown = false;
-    mouseUpX = event.clientX;
-    mouseUpY = event.clientY;
     filesCollection.forEach((element) =>
       element.classList.remove('disabled-hover')
     );
-
-    rootElement.classList.remove('unselected-text');
-
-    const array = [...filesCollection].filter((item) =>
-      item.classList.contains('active-item')
-    );
-  });
+  }
 })();
