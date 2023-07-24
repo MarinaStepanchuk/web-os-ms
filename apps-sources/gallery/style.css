@@ -1,0 +1,127 @@
+#gallery {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  background-color: rgb(41, 41, 41);
+  color: #fff;
+  font-size: 15px;
+  box-sizing: border-box;
+  cursor: default;
+}
+
+#gallery header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 40px;
+}
+
+#gallery header span {
+  padding-left: 10px;
+}
+
+#gallery .gallery-wrapper {
+  width: 100%;
+  height: calc(100% - 40px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  user-select: none;
+  gap: 10px;
+  padding: 0 0 10px;
+}
+
+#gallery .photo-name {
+  font-size: 14px;
+}
+
+#gallery .control-panel {
+  height: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+#gallery .control-panel .control-button {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  padding: 2px;
+  box-sizing: border-box;
+}
+
+#gallery .control-panel .control-button:hover {
+  background-color: #ffffff61;
+}
+
+#gallery .control-panel .close-button {
+  font-size: 28px;
+}
+
+#gallery .control-panel .close-button:hover {
+  background-color: #a40303;
+  padding-right: 5px;
+}
+
+#gallery .open-image-container {
+  height: calc(100% - 80px);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#gallery .open-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+#gallery .gallery-list {
+  background-color: rgb(72, 71, 71);
+  border-radius: 10px;
+  padding: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 10px;
+}
+
+#gallery .gallery-item {
+  height: 60px;
+  width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+#gallery .gallery-item:hover {
+  box-shadow: 0 0 5px #fff;
+}
+
+#gallery .gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+#gallery .active-photo {
+  border: 2px solid #a40303;
+}
