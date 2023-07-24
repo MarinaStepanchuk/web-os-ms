@@ -21,6 +21,17 @@ class Executor {
     return object?.files || [];
   }
 
+  changeIndexesOpenApps(topAppName) {
+    if (topAppName) {
+      this.driver.reorderOpenApps(topAppName);
+    }
+    const openApps = this.driver.getOpenApps();
+    openApps.forEach((app, index) => {
+      const appWraper = document.getElementById(app.split(' ').join('-'));
+      appWraper.style.zIndex = index * 10;
+    });
+  }
+
   setFilesQueue(object) {
     const { app } = object;
     const filesQueue = this.getFilesQueue();
@@ -40,8 +51,8 @@ class Executor {
 
   startApp(appName) {
     this.closeApp(appName);
+    driver.addOpenApp(appName);
     const files = this.driver.readFolder(`/apps/${appName}`).body;
-    console.log(1);
     if (!files) {
       alert('application start error');
       return;
@@ -59,6 +70,10 @@ class Executor {
     files.forEach((item) => {
       item.remove();
     });
+    if (files.length) {
+      driver.removeOpenApp(appName);
+      this.changeIndexesOpenApps();
+    }
   }
 }
 

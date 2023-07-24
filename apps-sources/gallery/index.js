@@ -3,6 +3,16 @@
   driver.addOpenApp(appName);
 
   const rootElement = document.getElementById('gallery');
+  rootElement.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
+  rootElement.addEventListener('click', (event) => {
+    if (event.target.closest('.close-button')) {
+      return;
+    }
+    const openApps = driver.getOpenApps();
+    if (openApps.at(-1) !== appName) {
+      executor.changeIndexesOpenApps(appName);
+    }
+  });
   let fullScreenMode = true;
 
   const filesToOpen = executor.getAppFilesToOpen(appName);
