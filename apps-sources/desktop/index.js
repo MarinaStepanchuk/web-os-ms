@@ -11,13 +11,13 @@
   const footer = document.createElement('footer');
   appWrapper.append(sectionDesctop, footer);
 
-  const appFolder = driver.readFolder('/apps/desktop');
+  const appFolder = driver.readFolder('/apps/desktop').body;
   const wallpaperUrl = appFolder.find(
     (item) => item.name === 'wallpapper.jpg'
   ).body;
-  const activeUser = drive.activeUser;
+  const activeUser = hardDrive.getActiveUser();
   sectionDesctop.style.backgroundImage = `url(${wallpaperUrl})`;
-  const userFolder = driver.readFolder(`/users/${activeUser}`);
+  const userFolder = driver.readFolder(`/users/${activeUser}`).body;
   const userDesctopFiles = userFolder.find(
     (item) => item.name === 'desktop' && item.type === 'folder'
   ).children;
@@ -30,57 +30,56 @@
     const title = document.createElement('span');
     title.innerText = file.name;
     desktopItem.append(icon, title);
+    const defaultIcons = driver.readFolder('/apps/default icons').body;
 
-    if (file.mime.includes('label')) {
-      desktopItem.setAttribute('data-type', 'exe');
-      desktopItem.setAttribute('data-path', file.body);
-      const pathArray = file.body.split('/');
-      pathArray.splice(-1, 1);
-      const iconUrl = driver
-        .readFolder(pathArray.join('/'))
-        .find((item) => item.name === 'icon.png' && item.type === 'file').body;
-      icon.style.backgroundImage = `url(${iconUrl})`;
-      return desktopItem;
+    const type = file.mime.split('/')[0];
+
+    switch (type) {
+      case 'label':
+        desktopItem.setAttribute('data-type', 'exe');
+        desktopItem.setAttribute('data-path', file.body);
+        const name = file.name.split('.');
+        name.splice(-1, 1);
+        title.innerText = name.join('.');
+        const pathArray = file.body.split('/');
+        pathArray.splice(-1, 1);
+        const iconUrl = driver
+          .readFolder(pathArray.join('/'))
+          .body.find(
+            (item) => item.name === 'icon.png' && item.type === 'file'
+          ).body;
+        icon.style.backgroundImage = `url(${iconUrl})`;
+        return desktopItem;
+      case 'image':
+        desktopItem.setAttribute('data-type', 'image');
+        icon.style.backgroundImage = `url(${file.body})`;
+        title.innerText = file.name;
+        return desktopItem;
+      case 'video':
+        desktopItem.setAttribute('data-type', 'video');
+        icon.style.backgroundImage = `url(${
+          defaultIcons.find((item) => item.name === 'video.icon').body
+        })`;
+        return desktopItem;
+      case 'audio':
+        desktopItem.setAttribute('data-type', 'audio');
+        icon.style.backgroundImage = `url(${
+          defaultIcons.find((item) => item.name === 'audio.icon').body
+        })`;
+        return desktopItem;
+      case 'text':
+        desktopItem.setAttribute('data-type', 'text');
+        icon.style.backgroundImage = `url(${
+          defaultIcons.find((item) => item.name === 'text.icon').body
+        })`;
+        return desktopItem;
+      default:
+        desktopItem.setAttribute('data-type', 'unknown');
+        icon.style.backgroundImage = `url(${
+          defaultIcons.find((item) => item.name === 'unknown.icon').body
+        })`;
+        return desktopItem;
     }
-
-    const defaultIcons = driver.readFolder('/apps/default icons');
-
-    if (file.mime.includes('image')) {
-      desktopItem.setAttribute('data-type', 'image');
-      icon.style.backgroundImage = `url(${file.body})`;
-      title.innerText = file.name;
-      return desktopItem;
-    }
-
-    if (file.mime.includes('video')) {
-      desktopItem.setAttribute('data-type', 'video');
-      icon.style.backgroundImage = `url(${
-        defaultIcons.find((item) => item.name === 'video.icon').body
-      })`;
-      return desktopItem;
-    }
-
-    if (file.mime.includes('audio')) {
-      desktopItem.setAttribute('data-type', 'audio');
-      icon.style.backgroundImage = `url(${
-        defaultIcons.find((item) => item.name === 'audio.icon').body
-      })`;
-      return desktopItem;
-    }
-
-    if (file.mime.includes('text')) {
-      desktopItem.setAttribute('data-type', 'text');
-      icon.style.backgroundImage = `url(${
-        defaultIcons.find((item) => item.name === 'text.icon').body
-      })`;
-      return desktopItem;
-    }
-
-    desktopItem.setAttribute('data-type', 'unknown');
-    icon.style.backgroundImage = `url(${
-      defaultIcons.find((item) => item.name === 'unknown.icon').body
-    })`;
-    return desktopItem;
   };
 
   userDesctopFiles.forEach((file) => {
@@ -97,7 +96,6 @@
       switch (type) {
         case 'exe':
           const appName = getArrNameByPath(file.getAttribute('data-path'));
-          executor.closeApp(appName);
           executor.startApp(appName);
           break;
         case 'image':
@@ -137,7 +135,9 @@
       pathArray.splice(-1, 1);
       const iconUrl = driver
         .readFolder(pathArray.join('/'))
-        .find((item) => item.name === 'icon.png' && item.type === 'file').body;
+        .body.find(
+          (item) => item.name === 'icon.png' && item.type === 'file'
+        ).body;
       icon.style.backgroundImage = `url(${iconUrl})`;
       activeApps.append(icon);
     }

@@ -20,9 +20,27 @@ const convertBase64 = (file) => {
 
 class Msvhd {
   #openApps = [];
+  #bufer = [];
 
   constructor() {
     this.hardDrive = new VirtualHardDrive();
+  }
+
+  getFileFromBufer() {
+    return this.#bufer;
+  }
+
+  setFileInBufer(file, path) {
+    const buferFile = { ...file };
+    this.#bufer.push({ file: buferFile, path });
+  }
+
+  setActiveUser(name) {
+    this.hardDrive.setActiveUser(name);
+  }
+
+  clearBufer() {
+    this.#bufer = [];
   }
 
   addOpenApp(appName) {
@@ -33,7 +51,7 @@ class Msvhd {
     this.#openApps = this.openApps.filter((app) => app !== appName);
   }
 
-  getOpenApp() {
+  getOpenApps() {
     return this.#openApps;
   }
 
@@ -50,9 +68,13 @@ class Msvhd {
           'Content-Type': 'application/json;charset=utf-8',
         },
       });
-      const res = await response.json();
+      const result = await response.json();
+      return result;
     } catch (error) {
-      console.log(error);
+      return {
+        status: 'error',
+        message: error.message,
+      };
     }
   }
 
@@ -78,15 +100,15 @@ class Msvhd {
   }
 
   createFolder(path, name) {
-    this.hardDrive.writeFolder(path, name);
+    return this.hardDrive.writeFolder(path, name);
   }
 
   deleteFile(path) {
-    this.hardDrive.removeFile(path);
+    return this.hardDrive.removeFile(path);
   }
 
   deleteFolder(path) {
-    this.hardDrive.removeFolder(path);
+    return this.hardDrive.removeFolder(path);
   }
 
   async updateFile(path, file) {
@@ -103,10 +125,40 @@ class Msvhd {
   }
 
   renameFile(path, newName) {
-    this.hardDrive.renameFile(path, newName);
+    return this.hardDrive.renameFile(path, newName);
   }
 
   renameFolder(path, newName) {
-    this.hardDrive.renameFolder(path, newName);
+    return this.hardDrive.renameFolder(path, newName);
+  }
+
+  copyFile(file, path) {
+    const result = this.hardDrive.copyFile(file);
+
+    if (result.status === 'successfully') {
+      this.setFileInBufer(file, path);
+    }
+
+    return result;
+  }
+
+  pasteFile(pastePath, buferItem, previousAction) {
+    const result = this.hardDrive.pasteFile(
+      pastePath,
+      buferItem,
+      previousAction
+    );
+
+    return result;
+  }
+
+  pasteFolder(pastePath, buferItem, previousAction) {
+    const result = this.hardDrive.pasteFolder(
+      pastePath,
+      buferItem,
+      previousAction
+    );
+
+    return result;
   }
 }

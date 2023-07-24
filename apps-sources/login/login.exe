@@ -1,7 +1,13 @@
 (() => {
   const appName = 'login';
 
-  const files = driver.readFolder(`/apps/${appName}`);
+  const files = driver.readFolder(`/apps/${appName}`).body;
+
+  if (!files) {
+    alert('application start error');
+    return;
+  }
+
   const html = files.find((item) => item.name.includes('.html')).body;
   const css = files.find((item) => item.name.includes('.css')).body;
   const js = files.find((item) => item.name.includes('.js')).body;

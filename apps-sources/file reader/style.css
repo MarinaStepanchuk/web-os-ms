@@ -10,23 +10,22 @@
   align-items: center;
   justify-content: space-around;
   background-color: rgb(232, 232, 232);
-  border-radius: 15px;
   color: #212121;
   font-size: 15px;
   box-sizing: border-box;
-  overflow: hidden;
   cursor: default;
-  border: 1px solid #d0d0d0;
+  border: 1px solid #bebebe;
 }
 
 #file-reader .file-reader-wrapper {
   width: 100%;
-  height: calc(100% - 20px);
+  height: calc(100% - 30px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   box-sizing: border-box;
+  user-select: none;
 }
 
 #file-reader .control-panel {
@@ -64,15 +63,44 @@
   padding-right: 5px;
 }
 
+#file-reader .navigation-panel {
+  width: 100%;
+  height: 40px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  gap: 10px;
+}
+
+#file-reader .navigation-buttons-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#file-reader .navigation-button {
+  width: 25px;
+  font-size: 18px;
+  border: none;
+  padding: 0;
+  background-color: inherit;
+}
+
+#file-reader .navigation-button:disabled {
+  color: #919090;
+}
+
 #file-reader .file-reader-wrapper .path-container {
   width: 100%;
-  height: 30px;
-  border-bottom: 1px solid #d0d0d0;
+  border: 1px solid #d0d0d0;
   padding: 0 10px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   box-sizing: border-box;
+  overflow: hidden;
   gap: 8px;
 }
 
@@ -83,6 +111,7 @@
   background-repeat: no-repeat;
   background-position: center;
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 #file-reader .path .path-icon::after {
@@ -107,6 +136,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 #file-reader .path .path-item:hover {
@@ -119,12 +149,15 @@
 }
 
 #file-reader .file-reader-wrapper .file-list {
+  position: relative;
   width: 100%;
+  height: 100%;
   box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
   align-items: flex-start;
+  align-content: flex-start;
   gap: 10px;
   padding: 10px;
   font-size: 12px;
@@ -147,6 +180,18 @@
   border-radius: 5px;
 }
 
+#file-reader .file-list .file-item.disabled-hover {
+  pointer-events: none;
+}
+
+#file-reader .file-list .input-new-name {
+  width: 100%;
+  outline: none;
+  border: none;
+  background-color: transparent;
+  border-bottom: 1px solid #3b3a3a;
+}
+
 #file-reader .file-list .icon {
   width: 100px;
   height: 80px;
@@ -165,6 +210,55 @@
   display: -webkit-box;
 }
 
-#file-reader .hide {
+#file-reader .file-list .file-item.hide {
   display: none;
+}
+
+#file-reader .file-item.active-item {
+  background-color: #93929261;
+}
+
+#file-reader .file-item.active-item:hover {
+  background-color: #93929261;
+}
+
+#file-reader .file-context-menu,
+#file-reader .common-context-menu {
+  position: absolute;
+  width: 100px;
+  padding: 10px 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 12px;
+  background-color: #fff;
+  border-radius: 10px;
+}
+
+#file-reader .file-context-menu li,
+#file-reader .common-context-menu li {
+  padding: 5px 10px;
+  list-style: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#file-reader .file-context-menu li:hover,
+#file-reader .common-context-menu li:hover {
+  background-color: #f7f1f1;
+}
+
+#file-reader .file-context-menu li::first-letter,
+#file-reader .common-context-menu li::first-letter {
+  text-transform: uppercase;
+}
+
+#file-reader .copied {
+  opacity: 0.5;
+}
+
+#file-reader .selected-area {
+  position: absolute;
+  background-color: rgba(167, 57, 57, 0.403);
 }
