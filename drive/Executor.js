@@ -1,4 +1,8 @@
 class Executor {
+  constructor() {
+    this.filesQueueToOpen = [];
+  }
+
   init() {
     this.driver = new Msvhd();
     this.driver.init().then(() => {
@@ -8,6 +12,28 @@ class Executor {
     });
   }
 
+  getFilesQueue() {
+    return this.filesQueueToOpen;
+  }
+
+  getAppFilesToOpen(appName) {
+    const object = this.getFilesQueue().find((item) => item.app === appName);
+    return object?.files || [];
+  }
+
+  setFilesQueue(object) {
+    const { app } = object;
+    const filesQueue = this.getFilesQueue();
+    const indexExistingAppQueue = filesQueue.findIndex(
+      (item) => item.app === app
+    );
+    if (indexExistingAppQueue === -1) {
+      this.filesQueueToOpen.push(object);
+    } else {
+      this.filesQueueToOpen.splice(indexExistingAppQueue, -1, object);
+    }
+  }
+
   getDriver() {
     return this.driver;
   }
@@ -15,7 +41,7 @@ class Executor {
   startApp(appName) {
     this.closeApp(appName);
     const files = this.driver.readFolder(`/apps/${appName}`).body;
-
+    console.log(1);
     if (!files) {
       alert('application start error');
       return;
