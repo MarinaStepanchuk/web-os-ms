@@ -1,4 +1,5 @@
 (() => {
+  const appName = 'login';
   const converterUserData = (data) => {
     const convertedData = window.atob(data.split('base64,')[1]);
     return convertedData.split(',').reduce((acc, item) => {
@@ -26,6 +27,7 @@
   const formContainer = document.createElement('div');
   formContainer.classList.add('login-form');
   appWrapper.append(formContainer);
+  appWrapper.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
 
   const form = document.createElement('form');
   form.id = 'register';
@@ -131,8 +133,8 @@
         driver.updateFile(`/users/active-user.txt`, file);
         driver.updateDrive();
         hardDrive.setActiveUser(name);
-        executor.closeApp('login');
         executor.startApp('desktop');
+        executor.closeApp('login');
       } else {
         errorUser.innerText = 'data is incorrect';
         setTimeout(() => {

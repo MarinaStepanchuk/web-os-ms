@@ -1,4 +1,5 @@
 (() => {
+  const appName = 'desktop';
   const getArrNameByPath = (path) => {
     const app = path.split('/').at(-1).split('.');
     app.splice(-1, 1);
@@ -10,6 +11,7 @@
   sectionDesctop.classList.add('desktop');
   const footer = document.createElement('footer');
   appWrapper.append(sectionDesctop, footer);
+  appWrapper.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
 
   const appFolder = driver.readFolder('/apps/desktop').body;
   const wallpaperUrl = appFolder.find(
@@ -21,6 +23,10 @@
   const userDesctopFiles = userFolder.find(
     (item) => item.name === 'desktop' && item.type === 'folder'
   ).children;
+
+  const desctopList = document.createElement('div');
+  desctopList.classList.add('desktop-list');
+  sectionDesctop.append(desctopList);
 
   const getIconByType = (file) => {
     const desktopItem = document.createElement('div');
@@ -84,7 +90,7 @@
 
   userDesctopFiles.forEach((file) => {
     const icon = getIconByType(file);
-    sectionDesctop.append(icon);
+    desctopList.append(icon);
   });
 
   sectionDesctop.addEventListener('dblclick', (event) => {

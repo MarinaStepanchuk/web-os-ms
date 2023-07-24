@@ -1,4 +1,5 @@
 (() => {
+  const appName = 'file reader';
   const filesIcons = driver.readFolder('/apps/file reader/assets/icons').body;
 
   let path = [];
@@ -28,10 +29,19 @@
   let mouseDownY = null;
 
   const rootElement = document.getElementById('file-reader');
+  rootElement.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
   let fullScreenMode = false;
+  rootElement.addEventListener('click', (event) => {
+    if (event.target.closest('.close-button')) {
+      return;
+    }
+    const openApps = driver.getOpenApps();
+    if (openApps.at(-1) !== appName) {
+      executor.changeIndexesOpenApps(appName);
+    }
+  });
 
   const appWrapper = document.querySelector('.file-reader-wrapper');
-  driver.addOpenApp('file reader');
 
   const controlPanel = document.createElement('div');
   controlPanel.classList.add('control-panel');
