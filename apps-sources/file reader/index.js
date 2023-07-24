@@ -225,10 +225,15 @@
           item.setAttribute('data-type', 'exe');
           const appName = file.name.split('.');
           appName.splice(-1, 1);
-          const appFolder = driver.readFolder(
-            `/apps/${appName.join('.')}`
-          ).body;
-          const iconUrl = appFolder.find(
+          const appFolder = driver.readFolder(`/apps/${appName.join('.')}`);
+          if (appFolder.status === 'error') {
+            item.setAttribute('data-type', 'unknown');
+            icon.style.backgroundImage = `url(${
+              filesIcons.find((element) => element.name === 'unknown.png').body
+            })`;
+            break;
+          }
+          const iconUrl = appFolder.body.find(
             (element) => element.name === 'icon.png' && element.type === 'file'
           ).body;
           item.setAttribute('data-path', `/apps/${appName}`);
@@ -488,9 +493,7 @@
         selectedFiles.forEach(openFile);
         deselectActiveFiles();
       },
-      [actions.delete]: async () => {
-        await deleteFiles(selectedFiles);
-      },
+      [actions.delete]: async () => await deleteFiles(selectedFiles),
       [actions.rename]: () => renameFile(clickedElement),
       [actions.paste]: () => pasteFiles(clickedElement),
       [actions.copy]: () => copyFiles(selectedFiles),
@@ -632,6 +635,7 @@
       }
 
       await driver.updateDrive();
+      fillFileReaderBody(path);
       return;
     }
 

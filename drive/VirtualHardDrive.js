@@ -444,9 +444,12 @@ class VirtualHardDrive {
       let fileExists = folder.find((item) => item.name === file.name);
       let count = 0;
       const fileNameArray = file.name.split('.');
-      fileNameArray.pop();
-      const fileName = fileNameArray.join('.');
-      const extension = file.name.split('.').at(-1);
+      const filenameWithoutExtension = [...fileNameArray];
+      if (filenameWithoutExtension.length > 1) {
+        filenameWithoutExtension.pop();
+      }
+      const fileName = filenameWithoutExtension.join('.');
+      const extension = fileNameArray.length > 1 ? fileNameArray.at(-1) : '';
       let newName = fileName;
 
       while (fileExists) {
@@ -459,7 +462,7 @@ class VirtualHardDrive {
 
       const newFile = {
         ...file,
-        name: `${newName}.${extension}`,
+        name: `${newName}${extension ? `.${extension}` : ''}`,
         accessRights: {
           creator: hardDrive.#activeUser,
           public: true,
