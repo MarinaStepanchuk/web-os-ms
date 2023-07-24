@@ -1,7 +1,8 @@
 class VirtualHardDrive {
+  #activeUser = 'admin';
+
   constructor() {
     this.virtualDrive = [];
-    this.activeUser = 'admin';
   }
 
   getDrive() {
@@ -12,59 +13,134 @@ class VirtualHardDrive {
     this.virtualDrive = data;
   }
 
+  setActiveUser(user) {
+    this.#activeUser = user;
+  }
+
+  getActiveUser() {
+    return this.#activeUser;
+  }
+
   async init() {
     const response = await fetch('http://localhost:3001/load-drive');
     const drive = await response.json();
     this.setDrive(drive);
   }
 
-  getFile(path) {
-    const pathArray = path.split('/');
-    const isRootDirectory = pathArray.length === 2;
+  checkAccess(file, type) {
+    const { creator, access } = file.accessRights;
+    const activeUser = hardDrive.getActiveUser();
 
-    if (isRootDirectory) {
-      const file = this.virtualDrive.find(
-        (element) => element.name === pathArray[1] && element.type === 'file'
-      );
-      return file || null;
+    switch (type) {
+      case 'read':
+        return (
+          creator === activeUser ||
+          access.reed.includes('all') ||
+          access.reed.includes(activeUser)
+        );
+      case 'modify':
+        return (
+          creator === activeUser ||
+          access.modify.includes('all') ||
+          access.modify.includes(activeUser)
+        );
+      default:
+        return false;
     }
+  }
 
-    const folderPath = [...pathArray];
-    const fileName = folderPath.pop();
-    const folder = this.getFolder(folderPath.join('/'));
+  getFile(path) {
+    try {
+      const pathArray = path.split('/');
+      const isRootDirectory = pathArray.length === 2;
 
-    const file = folder.find(
-      (element) => element.name === fileName && element.type === 'file'
-    );
+      if (isRootDirectory) {
+        const file = this.virtualDrive.find(
+          (element) => element.name === pathArray[1] && element.type === 'file'
+        );
 
-    return file || null;
+        if (!file) {
+          throw new Error('file not found');
+        }
+
+        const accessAllowed = this.checkAccess(file, 'read');
+
+        if (!accessAllowed) {
+          throw new Error('access denied');
+        }
+
+        return { status: 'successfully', body: file };
+      }
+
+      const folderPath = [...pathArray];
+      const fileName = folderPath.pop();
+      const folder = this.getFolder(folderPath.join('/'));
+
+      if (!folder.body) {
+        throw new Error(folder.error);
+      }
+
+      const file = folder.body.find(
+        (element) => element.name === fileName && element.type === 'file'
+      );
+
+      if (!file) {
+        throw new Error(`file ${fileName} not found`);
+      }
+
+      const accessAllowed = this.checkAccess(file, 'read');
+
+      if (!accessAllowed) {
+        throw new Error('access denied');
+      }
+
+      return { status: 'successfully', body: file };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
   }
 
   getFolder(path) {
-    const isRootDirectory = path === '/';
+    try {
+      const isRootDirectory = path === '/';
 
-    if (isRootDirectory) {
-      return this.virtualDrive;
-    }
-
-    const pathArray = path.slice(1).split('/');
-    const result = pathArray.reduce((acc, item) => {
-      const folder = acc.find(
-        (element) => element.name === item && element.type === 'folder'
-      );
-
-      if (folder) {
-        return folder.children;
+      if (isRootDirectory) {
+        return { status: 'successfully', body: this.virtualDrive };
       }
-    }, this.virtualDrive);
 
-    return result || null;
+      const pathArray = path.slice(1).split('/');
+      const result = pathArray.reduce((acc, item) => {
+        const folder = acc.find(
+          (element) => element.name === item && element.type === 'folder'
+        );
+
+        if (folder) {
+          const accessAllowed = this.checkAccess(folder, 'read');
+
+          if (!accessAllowed) {
+            throw new Error('access denied');
+          }
+
+          return folder.children;
+        } else {
+          throw new Error(`folder ${item} not found`);
+        }
+      }, this.virtualDrive);
+
+      return { status: 'successfully', body: result };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
   }
 
   writeFile(path, newFile) {
-    const fileExists = !!this.getFile(
-      path === '/' ? `${path}${newFile.name}` : `${path}/${newFile.name}`
-    );
+    const fileExists = this.checkFileExist(path, newFile.name);
 
     if (fileExists) {
       throw new Error('File with this name already exists');
@@ -73,65 +149,151 @@ class VirtualHardDrive {
     getFolder(path).push(newFile);
   }
 
+  checkFileExist(path, name) {
+    return !!this.getFile(path === '/' ? `${path}${name}` : `${path}/${name}`)
+      .body;
+  }
+
+  checkFolderExist(path, name) {
+    return !!this.getFolder(path === '/' ? `${path}${name}` : `${path}/${name}`)
+      .body;
+  }
+
   writeFolder(path, name) {
-    const folderExists = !!this.getFolder(
-      path === '/' ? `/${name}` : `${path}/${name}`
-    );
+    try {
+      const parentFolder = this.getFolder(path).body;
+      let folderExists = parentFolder.find((item) => item.name === name);
+      let count = 0;
+      let newName = name;
 
-    if (folderExists) {
-      throw new Error('Folder with this name already exists');
+      while (folderExists) {
+        count++;
+        newName = `${name}${count}`;
+        folderExists = parentFolder.find((item) => item.name === newName);
+      }
+
+      const newFolder = {
+        id: Date.now(),
+        name: newName,
+        type: 'folder',
+        accessRights: {
+          creator: hardDrive.#activeUser,
+          public: true,
+          access: {
+            reed: [],
+            modify: [],
+          },
+        },
+        children: [],
+      };
+
+      this.getFolder(path).body.push(newFolder);
+
+      return { status: 'successfully', body: newFolder };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
     }
-
-    const newFolder = {
-      id: Date.now(),
-      name: name,
-      type: 'folder',
-      children: [],
-    };
-
-    this.getFolder(path).push(newFolder);
-
-    return;
   }
 
   removeFile(path) {
-    const pathArray = path.split('/');
-    const isRootDirectory = pathArray.length === 2;
+    try {
+      const pathArray = path.split('/');
+      const isRootDirectory = pathArray.length === 2;
 
-    if (isRootDirectory) {
-      const fileName = path.slice(1);
-      const index = this.virtualDrive.findIndex(
+      if (isRootDirectory) {
+        const fileName = path.slice(1);
+        const file = this.virtualDrive.find(
+          (element) => element.name === fileName && element.type === 'file'
+        );
+
+        const accessAllowed = this.checkAccess(file, 'modify');
+
+        if (!accessAllowed) {
+          throw new Error('access denied');
+        }
+
+        const index = this.virtualDrive.findIndex(
+          (element) => element.name === fileName && element.type === 'file'
+        );
+        this.virtualDrive.splice(index, 1);
+        return {
+          status: 'successfully',
+          body: true,
+        };
+      }
+
+      const folderPath = [...pathArray];
+      const fileName = folderPath.pop();
+      const parrentFolder = this.getFolder(folderPath.join('/')).body;
+
+      const file = parrentFolder.find(
         (element) => element.name === fileName && element.type === 'file'
       );
-      this.virtualDrive.splice(index, 1);
-      return;
-    }
+      const accessAllowed = this.checkAccess(file, 'modify');
 
-    const folderPath = [...pathArray];
-    const fileName = folderPath.pop();
-    const parrentFolder = this.getFolder(folderPath.join('/'));
-    const index = parrentFolder.findIndex(
-      (element) => element.name === fileName && element.type === 'file'
-    );
-    parrentFolder.splice(index, 1);
+      if (!accessAllowed) {
+        throw new Error('access denied');
+      }
+
+      const index = parrentFolder.findIndex(
+        (element) => element.name === fileName && element.type === 'file'
+      );
+      parrentFolder.splice(index, 1);
+
+      return {
+        status: 'successfully',
+        body: true,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
   }
 
   removeFolder(path) {
-    const isRootDirectory = path === '/';
+    try {
+      const isRootDirectory = path === '/';
 
-    if (isRootDirectory) {
-      this.virtualDrive = [];
-      return;
+      if (isRootDirectory) {
+        throw new Error('deleting the root directory is forbidden');
+      }
+
+      const pathArray = path.split('/');
+      const folderPath = [...pathArray];
+      const folderName = folderPath.pop();
+      const parrentFolder = this.getFolder(
+        folderPath.length === 1 ? '/' : folderPath.join('/')
+      ).body;
+      const folder = parrentFolder.find(
+        (element) => element.name === folderName && element.type === 'folder'
+      );
+
+      const accessAllowed = this.checkAccess(folder, 'modify');
+
+      if (!accessAllowed) {
+        throw new Error('access denied');
+      }
+
+      const index = parrentFolder.findIndex(
+        (element) => element.name === folderName && element.type === 'folder'
+      );
+      parrentFolder.splice(index, 1);
+
+      return {
+        status: 'successfully',
+        body: true,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
     }
-
-    const pathArray = path.split('/');
-    const folderPath = [...pathArray];
-    const folderName = folderPath.pop();
-    const parrentFolder = this.getFolder(folderPath.join('/'));
-    const index = parrentFolder.findIndex(
-      (element) => element.name === folderName && element.type === 'folder'
-    );
-    parrentFolder.splice(index, 1);
   }
 
   updateFile(path, newFile) {
@@ -141,43 +303,250 @@ class VirtualHardDrive {
   }
 
   renameFolder(path, newName) {
-    const isRootDirectory = path === '/';
+    try {
+      const isRootDirectory = path === '/';
 
-    if (isRootDirectory) {
-      throw new Error('You cannot rename the root directory');
+      if (isRootDirectory) {
+        throw new Error('You cannot rename the root directory');
+      }
+
+      const pathArray = path.split('/');
+      const folderPath = [...pathArray];
+      const folderName = folderPath.pop();
+      const parrentFolder = this.getFolder(
+        folderPath.length === 1 ? '/' : folderPath.join('/')
+      ).body;
+      const folder = parrentFolder.find(
+        (element) => element.name === folderName && element.type === 'folder'
+      );
+
+      const accessAllowed = this.checkAccess(folder, 'modify');
+
+      if (!accessAllowed) {
+        throw new Error('access denied');
+      }
+
+      const isExists = parrentFolder.find(
+        (element) => element.name === newName
+      );
+
+      if (isExists) {
+        throw new Error('a file with this name already exists');
+      }
+
+      folder.name = newName;
+      return {
+        status: 'successfully',
+        body: true,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
     }
-
-    const pathArray = path.split('/');
-    const folderPath = [...pathArray];
-    const folderName = folderPath.pop();
-    const parrentFolder = this.getFolder(folderPath.join('/'));
-    const folder = parrentFolder.find(
-      (element) => element.name === folderName && element.type === 'folder'
-    );
-    folder.name = newName;
   }
 
   renameFile(path, newName) {
-    const pathArray = path.split('/');
-    const isRootDirectory = pathArray.length === 2;
+    try {
+      const pathArray = path.split('/');
+      const isRootDirectory = pathArray.length === 2;
 
-    if (isRootDirectory) {
-      const fileName = path.slice(1);
-      const extension = fileName.split('.').at(-1);
-      const file = this.virtualDrive.find(
+      if (isRootDirectory) {
+        const fileName = path.slice(1);
+        const file = this.virtualDrive.find(
+          (element) => element.name === fileName && element.type === 'file'
+        );
+
+        const accessAllowed = this.checkAccess(file, 'modify');
+
+        if (!accessAllowed) {
+          throw new Error('access denied');
+        }
+
+        const isExists = this.virtualDrive.find(
+          (element) => element.name === newName
+        );
+
+        if (isExists) {
+          throw new Error('a file with this name already exists');
+        }
+
+        file.name = newName;
+
+        return {
+          status: 'successfully',
+          body: true,
+        };
+      }
+
+      const folderPath = [...pathArray];
+      const fileName = folderPath.pop();
+      const parrentFolder = this.getFolder(folderPath.join('/')).body;
+      const file = parrentFolder.find(
         (element) => element.name === fileName && element.type === 'file'
       );
-      file.name = `${newName}.${extension}`;
-      return;
-    }
 
-    const folderPath = [...pathArray];
-    const fileName = folderPath.pop();
-    const extension = fileName.split('.').at(-1);
-    const parrentFolder = getFolder(folderPath.join('/'));
-    const file = parrentFolder.find(
-      (element) => element.name === fileName && element.type === 'file'
-    );
-    file.name = `${newName}.${extension}`;
+      const accessAllowed = this.checkAccess(file, 'modify');
+
+      if (!accessAllowed) {
+        throw new Error('access denied');
+      }
+
+      const isExists = parrentFolder.find(
+        (element) => element.name === newName
+      );
+
+      if (isExists) {
+        throw new Error('a file with this name already exists');
+      }
+
+      file.name = newName;
+      return {
+        status: 'successfully',
+        body: true,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
+  }
+
+  copyFile(file) {
+    try {
+      const accessAllowed = this.checkAccess(file, 'read');
+
+      if (!accessAllowed) {
+        throw new Error('access denied');
+      }
+
+      return { status: 'successfully', body: file };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
+  }
+
+  pasteFile(pastePath, bufer, previousAction) {
+    try {
+      const folder = this.getFolder(pastePath).body;
+      const file = bufer.file;
+      const buferFilePath = bufer.path;
+
+      if (!folder) {
+        throw new Error('copy error');
+      }
+
+      let fileExists = folder.find((item) => item.name === file.name);
+      let count = 0;
+      const fileNameArray = file.name.split('.');
+      const filenameWithoutExtension = [...fileNameArray];
+      if (filenameWithoutExtension.length > 1) {
+        filenameWithoutExtension.pop();
+      }
+      const fileName = filenameWithoutExtension.join('.');
+      const extension = fileNameArray.length > 1 ? fileNameArray.at(-1) : '';
+      let newName = fileName;
+
+      while (fileExists) {
+        newName = `${fileName}(copy${count || ''})`;
+        fileExists = folder.find(
+          (item) => item.name === `${newName}.${extension}`
+        );
+        count++;
+      }
+
+      const newFile = {
+        ...file,
+        name: `${newName}${extension ? `.${extension}` : ''}`,
+        accessRights: {
+          creator: hardDrive.#activeUser,
+          public: true,
+          access: {
+            reed: [],
+            modify: [],
+          },
+        },
+      };
+
+      folder.push(newFile);
+
+      if (previousAction === 'cut') {
+        this.removeFile(
+          buferFilePath === '/'
+            ? `${buferFilePath}${file.name}`
+            : `${buferFilePath}/${file.name}`
+        );
+      }
+
+      return {
+        status: 'successfully',
+        body: newFile,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
+  }
+
+  pasteFolder(pastePath, bufer, previousAction) {
+    try {
+      const folder = this.getFolder(pastePath).body;
+      const file = bufer.file;
+      const buferFilePath = bufer.path;
+
+      if (!folder) {
+        throw new Error('copy error');
+      }
+
+      let fileExists = folder.find((item) => item.name === file.name);
+      let count = 0;
+      let newName = file.name;
+
+      while (fileExists) {
+        newName = `${file.name}(copy${count || ''})`;
+        fileExists = folder.find((item) => item.name === newName);
+        count++;
+      }
+
+      const newFile = {
+        ...file,
+        name: newName,
+        accessRights: {
+          creator: hardDrive.#activeUser,
+          public: true,
+          access: {
+            reed: [],
+            modify: [],
+          },
+        },
+      };
+
+      folder.push(newFile);
+
+      if (previousAction === 'cut') {
+        this.removeFolder(
+          buferFilePath === '/'
+            ? `${buferFilePath}${file.name}`
+            : `${buferFilePath}/${file.name}`
+        );
+      }
+
+      return {
+        status: 'successfully',
+        body: newFile,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
   }
 }
