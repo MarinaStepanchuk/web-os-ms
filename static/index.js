@@ -1,4 +1,4 @@
-(() => {
+document.addEventListener('DOMContentLoaded', () => {
   const root = document.getElementById('root');
 
   const spinner = document.createElement('div');
@@ -19,4 +19,4 @@
     document.body.append(script);
     return script;
   }
-})();
+});

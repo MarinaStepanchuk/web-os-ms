@@ -357,27 +357,84 @@
     return app.join('.');
   };
 
-  const openFile = (file) => {
-    const type = file.getAttribute('data-type');
-    const name = file.querySelector('.file-description').innerText;
-    const appPath = file.getAttribute('data-path');
+  const openFiles = (files) => {
+    const images = [];
+    const videos = [];
+    const audios = [];
 
-    const openingByTypeMap = {
-      folder: () => openFolder(name),
-      exe: () => executor.startApp(getAppNameByPath(appPath)),
-      label: () => executor.startApp(getAppNameByPath(appPath)),
-      image: () => executor.startApp('photos'),
-      video: () => executor.startApp('media player'),
-      audio: () => executor.startApp('audio player'),
-      text: () => executor.startApp('notepad'),
-      unknown: () => alert('Unknown extension'),
-    };
+    files.forEach((file) => {
+      const type = file.getAttribute('data-type');
+      const name = file.querySelector('.file-description').innerText;
+      const appPath = file.getAttribute('data-path');
 
-    const action = openingByTypeMap[type];
-    if (action) {
-      openingByTypeMap[type]();
-    } else {
-      openingByTypeMap.unknown();
+      const openingByTypeMap = {
+        folder: () => openFolder(name),
+        exe: () => executor.startApp(getAppNameByPath(appPath)),
+        label: () => executor.startApp(getAppNameByPath(appPath)),
+        image: () => {
+          const filePath =
+            path.length === 0 ? `/${name}` : `/${path.join('/')}/${name}`;
+          const searchFile = driver.readFile(filePath);
+          if (searchFile.status === 'error') {
+            alert(`can't open file ${name}`);
+            return;
+          }
+          images.push(searchFile.body);
+        },
+        video: () => {
+          const filePath =
+            path.length === 0 ? `/${name}` : `/${path.join('/')}/${name}`;
+          const searchFile = driver.readFile(filePath);
+          if (searchFile.status === 'error') {
+            alert(`can't open file ${name}`);
+            return;
+          }
+          videos.push(file);
+        },
+        audio: () => {
+          const filePath =
+            path.length === 0 ? `/${name}` : `/${path.join('/')}/${name}`;
+          const searchFile = driver.readFile(filePath);
+          if (searchFile.status === 'error') {
+            alert(`can't open file ${name}`);
+            return;
+          }
+          audios.push(file);
+        },
+        text: () => executor.startApp('notepad'),
+        unknown: () => alert('Unknown extension'),
+      };
+
+      const action = openingByTypeMap[type];
+      if (action) {
+        openingByTypeMap[type]();
+      } else {
+        openingByTypeMap.unknown();
+      }
+    });
+
+    if (images.length > 0) {
+      executor.setFilesQueue({
+        app: 'gallery',
+        files: [...images],
+      });
+      executor.startApp('gallery');
+    }
+
+    if (videos.length > 0) {
+      executor.setFilesQueue({
+        app: 'media player',
+        files: [...videos],
+      });
+      executor.startApp('media player');
+    }
+
+    if (audios.length > 0) {
+      executor.setFilesQueue({
+        app: 'audio player',
+        files: [...audios],
+      });
+      executor.startApp('audio player');
     }
   };
 
@@ -413,7 +470,7 @@
       return;
     }
 
-    openFile(file);
+    openFiles([file]);
   });
 
   filesContainer.addEventListener('contextmenu', (event) => {
@@ -490,7 +547,7 @@
 
     const executionByTypeMap = {
       [actions.open]: () => {
-        selectedFiles.forEach(openFile);
+        openFiles(selectedFiles);
         deselectActiveFiles();
       },
       [actions.delete]: async () => await deleteFiles(selectedFiles),
@@ -537,27 +594,6 @@
     driver.clearBufer();
     selectedFiles.forEach((file) => copyFileInBufer(file));
   }
-
-  // document.addEventListener('keydown', (event) => {
-  //   if (
-  //     event.getModifierState('Control') &&
-  //     (event.key === 'c' || 'C') &&
-  //     driver.getOpenApps().at(-1) === 'file reader'
-  //   ) {
-  //     driver.clearBufer();
-  //     const selectedFiles = filesContainer.querySelectorAll('.active-item');
-  //     selectedFiles.forEach((element) => copyFile(element));
-  //   }
-
-  //   if (
-  //     event.getModifierState('Control') &&
-  //     (event.key === 'v' || 'V') &&
-  //     driver.getOpenApps().at(-1) === 'file reader'
-  //   ) {
-  //     const selectedFiles = filesContainer.querySelectorAll('.active-item');
-  //     selectedFiles.forEach((element) => copyFile(element));
-  //   }
-  // });
 
   function copyFileInBufer(fileElement) {
     deselectActiveFiles();
