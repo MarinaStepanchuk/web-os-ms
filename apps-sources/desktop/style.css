@@ -14,17 +14,23 @@ body {
 }
 
 .desktop-wrapper .desktop {
+  width: 100%;
+  height: calc(100vh - 45px);
   position: relative;
+
+  background-size: cover;
+  box-sizing: border-box;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.desktop-wrapper .desktop-list {
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
   gap: 10px;
   justify-content: flex-start;
-  height: calc(100vh - 45px);
-  background-size: cover;
-  box-sizing: border-box;
-  padding: 10px;
-  overflow: hidden;
+  height: 100%;
 }
 
 .desktop-wrapper .desktop-item {

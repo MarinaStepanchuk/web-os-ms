@@ -48,7 +48,14 @@ class Msvhd {
   }
 
   removeOpenApp(appName) {
-    this.#openApps = this.openApps.filter((app) => app !== appName);
+    this.#openApps = this.#openApps.filter((app) => app !== appName);
+  }
+
+  reorderOpenApps(appName) {
+    const oppenApps = [...this.getOpenApps()];
+    const indexApp = oppenApps.indexOf(appName);
+    this.#openApps.splice(indexApp, 1);
+    this.#openApps.push(appName);
   }
 
   getOpenApps() {
