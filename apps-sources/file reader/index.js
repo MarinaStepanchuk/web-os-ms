@@ -399,7 +399,7 @@
             alert(`can't open file ${name}`);
             return;
           }
-          videos.push(file);
+          videos.push(searchFile.body);
         },
         audio: () => {
           const filePath =
@@ -409,7 +409,7 @@
             alert(`can't open file ${name}`);
             return;
           }
-          audios.push(file);
+          audios.push(searchFile.body);
         },
         text: () => executor.startApp('notepad'),
         unknown: () => alert('Unknown extension'),
@@ -545,6 +545,7 @@
     menuPositioning(event, menu);
 
     menu.addEventListener('click', async (event) => {
+      event.stopImmediatePropagation();
       closeContextMenus();
       const actionType = event.target.innerText.toLowerCase();
 
@@ -834,6 +835,7 @@
     menuPositioning(event, menu);
 
     menu.addEventListener('click', async (event) => {
+      event.stopImmediatePropagation();
       closeContextMenus();
       const actionType = event.target.innerText.toLowerCase();
       if (actionType === actions.createFolder) {
