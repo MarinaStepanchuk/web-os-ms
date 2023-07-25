@@ -15,6 +15,8 @@
   box-sizing: border-box;
   cursor: default;
   border: 1px solid #bebebe;
+  resize: both;
+  overflow: auto;
 }
 
 #file-reader .file-reader-wrapper {

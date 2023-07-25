@@ -14,6 +14,8 @@
   font-size: 15px;
   box-sizing: border-box;
   cursor: default;
+  resize: both;
+  overflow: auto;
 }
 
 #media-player header {

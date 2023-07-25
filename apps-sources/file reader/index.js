@@ -926,9 +926,12 @@
   document.addEventListener('mouseup', removingSelectedArea);
 
   function startSelectingArea(event) {
+    const openApps = driver.getOpenApps();
+
     if (
       !driver.getOpenApps().at(-1) === 'file reader' ||
-      clickOutsideApp(event)
+      clickOutsideApp(event) ||
+      openApps.at(-1) !== appName
     ) {
       return;
     }
