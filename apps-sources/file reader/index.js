@@ -31,7 +31,7 @@
   const rootElement = document.getElementById('file-reader');
   rootElement.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
   let fullScreenMode = false;
-  rootElement.addEventListener('click', (event) => {
+  rootElement.addEventListener('mousedown', (event) => {
     if (event.target.closest('.close-button')) {
       return;
     }
@@ -45,6 +45,7 @@
 
   const controlPanel = document.createElement('div');
   controlPanel.classList.add('control-panel');
+  controlPanel.classList.add('draggable');
   rootElement.prepend(controlPanel);
 
   const turnButton = document.createElement('div');
@@ -65,9 +66,9 @@
   controlPanel.append(turnButton, expandButton, closeButton);
 
   closeButton.addEventListener('click', () => {
-    document.removeEventListener('mousedown', startSelectingArea);
-    document.removeEventListener('mousemove', moveSelectedArea);
-    document.removeEventListener('mouseup', removingSelectedArea);
+    filesContainer.removeEventListener('mousedown', startSelectingArea);
+    filesContainer.removeEventListener('mousemove', moveSelectedArea);
+    filesContainer.removeEventListener('mouseup', removingSelectedArea);
     executor.closeApp('file reader');
   });
 
@@ -75,9 +76,15 @@
     if (fullScreenMode) {
       rootElement.style.width = '70%';
       rootElement.style.height = '80%';
+      rootElement.style.left = '50%';
+      rootElement.style.top = '50%';
+      rootElement.style.transform = `translate(-50%, -50%)`;
     } else {
       rootElement.style.width = '100%';
       rootElement.style.height = '100%';
+      rootElement.style.left = '0';
+      rootElement.style.top = '0';
+      rootElement.style.transform = `translate(0, 0)`;
     }
     fullScreenMode = !fullScreenMode;
   });
@@ -921,9 +928,9 @@
   let filesCollection = null;
   let initialScroll = null;
 
-  document.addEventListener('mousedown', startSelectingArea);
-  document.addEventListener('mousemove', moveSelectedArea);
-  document.addEventListener('mouseup', removingSelectedArea);
+  filesContainer.addEventListener('mousedown', startSelectingArea);
+  filesContainer.addEventListener('mousemove', moveSelectedArea);
+  filesContainer.addEventListener('mouseup', removingSelectedArea);
 
   function startSelectingArea(event) {
     const openApps = driver.getOpenApps();

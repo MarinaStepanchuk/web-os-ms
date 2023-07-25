@@ -22,6 +22,8 @@ body {
   box-sizing: border-box;
   padding: 10px;
   overflow: hidden;
+  will-change: transform, left, top;
+  contain: layout;
 }
 
 .desktop-wrapper .desktop-list {

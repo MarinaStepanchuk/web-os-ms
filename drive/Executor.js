@@ -50,7 +50,6 @@ class Executor {
   }
 
   startApp(appName) {
-    console.log(appName);
     this.closeApp(appName);
     driver.addOpenApp(appName);
     const files = this.driver.readFolder(`/apps/${appName}`).body;

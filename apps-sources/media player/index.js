@@ -2,9 +2,9 @@
   const appName = 'media player';
 
   const rootElement = document.getElementById('media-player');
-  console.log(rootElement);
+  rootElement.classList.add('draggble-container');
   rootElement.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
-  rootElement.addEventListener('click', (event) => {
+  rootElement.addEventListener('mousedown', (event) => {
     if (event.target.closest('.close-button')) {
       return;
     }
@@ -21,6 +21,7 @@
   const appWrapper = document.querySelector('.media-player-wrapper');
 
   const header = document.createElement('header');
+  header.classList.add('draggable');
   rootElement.prepend(header);
 
   const videoTitle = document.createElement('span');
@@ -28,6 +29,7 @@
 
   const controlPanel = document.createElement('div');
   controlPanel.classList.add('control-panel');
+  controlPanel.classList.add('draggable');
   header.append(videoTitle, controlPanel);
 
   const turnButton = document.createElement('div');
@@ -53,11 +55,17 @@
 
   expandButton.addEventListener('click', () => {
     if (fullScreenMode) {
-      rootElement.style.width = '50%';
-      rootElement.style.height = '70%';
+      rootElement.style.width = '70%';
+      rootElement.style.height = '60%';
+      rootElement.style.left = '50%';
+      rootElement.style.top = '50%';
+      rootElement.style.transform = `translate(-50%, -50%)`;
     } else {
       rootElement.style.width = '100%';
       rootElement.style.height = '100%';
+      rootElement.style.left = '0';
+      rootElement.style.top = '0';
+      rootElement.style.transform = `translate(0, 0)`;
     }
     fullScreenMode = !fullScreenMode;
   });
