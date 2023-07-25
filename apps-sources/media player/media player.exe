@@ -1,0 +1,37 @@
+(() => {
+  const appName = 'media player';
+
+  const files = driver.readFolder(`/apps/${appName}`).body;
+
+  if (!files) {
+    alert('application start error');
+  }
+  
+  const html = files.find((item) => item.name.includes('.html')).body;
+  const css = files.find((item) => item.name.includes('.css')).body;
+  const js = files.find((item) => item.name.includes('.js')).body;
+
+  const decodedHtml = window.atob(html.split('base64,')[1]);
+  const app = document.createElement('div');
+  app.setAttribute('data-type', 'app');
+  app.id = appName.split(' ').join('-');
+  app.setAttribute('data-app', appName);
+  const startIndex = decodedHtml.indexOf('<body>');
+  const endIndex = decodedHtml.indexOf('</body>');
+  app.innerHTML = decodedHtml.substring(startIndex + 6, endIndex);
+
+  const root = document.querySelector('.desktop');
+  root.append(app);
+
+  const link = document.createElement('link');
+  link.href = css;
+  link.setAttribute('data-app', appName);
+  link.rel = 'stylesheet';
+  link.type = 'text/css';
+  document.head.append(link);
+
+  const script = document.createElement('script');
+  script.src = js;
+  script.setAttribute('data-app', appName);
+  document.body.append(script);
+})();
