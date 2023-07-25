@@ -17,6 +17,7 @@
   border: 1px solid #bebebe;
   resize: both;
   overflow: auto;
+  user-select: none;
 }
 
 #file-reader .file-reader-wrapper {
@@ -27,7 +28,6 @@
   align-items: center;
   justify-content: flex-start;
   box-sizing: border-box;
-  user-select: none;
 }
 
 #file-reader .control-panel {

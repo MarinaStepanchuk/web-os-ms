@@ -156,4 +156,63 @@
       executor.startApp(appName);
     }
   });
+
+  let startX = null;
+  let startY = null;
+  let deltaX = null;
+  let deltaY = null;
+  let raf = null;
+  let dragItem = null;
+  let rectDragElement = null;
+  sectionDesctop.addEventListener('mousedown', dragStart, { passive: true });
+
+  function dragStart(event) {
+    const dragObject = event.target.closest('.draggable');
+    if (dragObject) {
+      dragItem = dragObject.parentElement;
+      rectDragElement = dragItem.getBoundingClientRect();
+      startX = event.clientX;
+      startY = event.clientY;
+      const startLeft = rectDragElement.left;
+      const startTop = rectDragElement.top;
+      dragItem.style.transform = 'translate3d(0px,0px,0px)';
+      dragItem.style.left = `${startLeft}px`;
+      dragItem.style.top = `${startTop}px`;
+
+      sectionDesctop.addEventListener('mousemove', dragElement, {
+        passive: true,
+      });
+      sectionDesctop.addEventListener('mouseup', dragEnd, { passive: true });
+    }
+  }
+
+  function dragElement(event) {
+    if (!raf) {
+      deltaX = event.clientX - startX;
+      deltaY = event.clientY - startY;
+      raf = requestAnimationFrame(userMovedRaf);
+    }
+  }
+
+  function userMovedRaf() {
+    dragItem.style.transform =
+      'translate3d(' + deltaX + 'px,' + deltaY + 'px, 0px)';
+    raf = null;
+  }
+
+  function dragEnd(event) {
+    sectionDesctop.removeEventListener('mousemove', dragElement, {
+      passive: true,
+    });
+    sectionDesctop.removeEventListener('mouseup', dragEnd, { passive: true });
+    if (raf) {
+      cancelAnimationFrame(raf);
+      raf = null;
+    }
+    dragItem.style.left = rectDragElement.left + deltaX + 'px';
+    dragItem.style.top = rectDragElement.top + deltaY + 'px';
+    dragItem.style.transform = 'translate3d(0px,0px,0px)';
+    deltaX = null;
+    deltaY = null;
+  }
 })();

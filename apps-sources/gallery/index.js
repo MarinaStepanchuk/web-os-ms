@@ -2,8 +2,9 @@
   const appName = 'gallery';
 
   const rootElement = document.getElementById('gallery');
+  rootElement.classList.add('draggble-container');
   rootElement.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
-  rootElement.addEventListener('click', (event) => {
+  rootElement.addEventListener('mousedown', (event) => {
     if (event.target.closest('.close-button')) {
       return;
     }
@@ -20,6 +21,7 @@
   const appWrapper = document.querySelector('.gallery-wrapper');
 
   const header = document.createElement('header');
+  header.classList.add('draggable');
   rootElement.prepend(header);
 
   const photoNameElement = document.createElement('span');
@@ -55,9 +57,15 @@
     if (fullScreenMode) {
       rootElement.style.width = '60%';
       rootElement.style.height = '90%';
+      rootElement.style.left = '50%';
+      rootElement.style.top = '50%';
+      rootElement.style.transform = `translate(-50%, -50%)`;
     } else {
       rootElement.style.width = '100%';
       rootElement.style.height = '100%';
+      rootElement.style.left = '0';
+      rootElement.style.top = '0';
+      rootElement.style.transform = `translate(0, 0)`;
     }
     fullScreenMode = !fullScreenMode;
   });
