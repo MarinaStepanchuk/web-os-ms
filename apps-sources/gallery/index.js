@@ -1,6 +1,5 @@
 (() => {
   const appName = 'gallery';
-  driver.addOpenApp(appName);
 
   const rootElement = document.getElementById('gallery');
   rootElement.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
@@ -24,6 +23,7 @@
   rootElement.prepend(header);
 
   const photoNameElement = document.createElement('span');
+  photoNameElement.classList.add('photo-name');
   photoNameElement.innerText = currentImage.name;
 
   const controlPanel = document.createElement('div');
@@ -74,10 +74,28 @@
   galleryList.classList.add('gallery-list');
   appWrapper.append(galleryList);
 
+  galleryList.addEventListener('click', (event) => changeActiveImage(event));
+
+  function changeActiveImage(event) {
+    const item = event.target.closest('.gallery-item');
+    if (!item) {
+      return;
+    }
+    const currentActivePhoto = rootElement.querySelector('.active-photo');
+    currentActivePhoto.classList.remove('active-photo');
+    item.classList.add('active-photo');
+    const name = item.getAttribute('data-name');
+    currentImage = filesToOpen.find((item) => item.name === name);
+    openImage.src = currentImage.body;
+    openImage.alt = currentImage.name;
+    photoNameElement.innerText = currentImage.name;
+  }
+
   function fillGallery() {
     filesToOpen.forEach((item) => {
       const photoContainer = document.createElement('div');
       photoContainer.classList.add('gallery-item');
+      photoContainer.setAttribute('data-name', item.name);
       const galleryItem = document.createElement('img');
       galleryItem.src = item.body;
       galleryItem.alt = item.name;

@@ -36,13 +36,15 @@ class VirtualHardDrive {
         return (
           creator === activeUser ||
           access.reed.includes('all') ||
-          access.reed.includes(activeUser)
+          access.reed.includes(activeUser) ||
+          activeUser === 'admin'
         );
       case 'modify':
         return (
           creator === activeUser ||
           access.modify.includes('all') ||
-          access.modify.includes(activeUser)
+          access.modify.includes(activeUser) ||
+          activeUser === 'admin'
         );
       default:
         return false;
