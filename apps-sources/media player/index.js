@@ -2,7 +2,6 @@
   const appName = 'media player';
 
   const rootElement = document.getElementById('media-player');
-  rootElement.classList.add('draggble-container');
   rootElement.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
   rootElement.addEventListener('mousedown', (event) => {
     if (event.target.closest('.close-button')) {
