@@ -56,6 +56,10 @@
   appWrapper.append(player);
 
   function getTrackNameFromFileName(fileName) {
+    if (!fileName.includes('.')) {
+      return fileName;
+    }
+
     const array = fileName.split('.');
     array.splice(-1, 1);
     return array.join('.');
@@ -155,8 +159,10 @@
   volumeLine.addEventListener('change', changeVolume);
   volumeButton.addEventListener('click', mute);
 
-  loadTrack(trackIndex);
-  playTrack(trackIndex);
+  if (filesToOpen.length) {
+    loadTrack(trackIndex);
+    playTrack(trackIndex);
+  }
 
   function changeCurrentTrack(event) {
     const item = event.target.closest('.play-list-item');
@@ -214,16 +220,15 @@
       'd',
       'e',
     ];
-    let a;
 
     function populate() {
-      let a = '';
+      let color = '';
       for (let i = 0; i < 6; i++) {
-        let x = Math.round(Math.random() * 14);
+        let x = Math.round(Math.random() * 15);
         let y = hex[x];
-        a += y;
+        color += y;
       }
-      return `#${a}`;
+      return `#${color}`;
     }
 
     let Color1 = populate();

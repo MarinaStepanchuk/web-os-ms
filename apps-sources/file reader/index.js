@@ -378,6 +378,7 @@
     const images = [];
     const videos = [];
     const audios = [];
+    const textFiles = [];
 
     files.forEach((file) => {
       const type = file.getAttribute('data-type');
@@ -418,7 +419,16 @@
           }
           audios.push(searchFile.body);
         },
-        text: () => executor.startApp('notepad'),
+        text: () => {
+          const filePath =
+            path.length === 0 ? `/${name}` : `/${path.join('/')}/${name}`;
+          const searchFile = driver.readFile(filePath);
+          if (searchFile.status === 'error') {
+            alert(`can't open file ${name}`);
+            return;
+          }
+          textFiles.push(searchFile.body);
+        },
         unknown: () => alert('Unknown extension'),
       };
 
@@ -429,9 +439,11 @@
         openingByTypeMap.unknown();
       }
     });
+    const currentPath = path.length === 0 ? '/' : `/${path.join('/')}`;
 
     if (images.length > 0) {
       executor.setFilesQueue({
+        path: currentPath,
         app: 'gallery',
         files: [...images],
       });
@@ -440,6 +452,7 @@
 
     if (videos.length > 0) {
       executor.setFilesQueue({
+        path: currentPath,
         app: 'media player',
         files: [...videos],
       });
@@ -448,10 +461,20 @@
 
     if (audios.length > 0) {
       executor.setFilesQueue({
+        path: currentPath,
         app: 'audio player',
         files: [...audios],
       });
       executor.startApp('audio player');
+    }
+
+    if (textFiles.length > 0) {
+      executor.setFilesQueue({
+        path: currentPath,
+        app: 'notepad',
+        files: [...textFiles],
+      });
+      executor.startApp('notepad');
     }
   };
 

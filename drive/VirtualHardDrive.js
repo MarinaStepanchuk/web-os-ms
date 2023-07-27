@@ -142,22 +142,28 @@ class VirtualHardDrive {
   }
 
   writeFile(path, newFile) {
-    const fileExists = this.checkFileExist(path, newFile.name);
+    try {
+      const fileExists = this.checkFileExist(path, newFile.name);
 
-    if (fileExists) {
-      throw new Error('File with this name already exists');
+      if (fileExists) {
+        throw new Error('File with this name already exists');
+      }
+
+      this.getFolder(path).body.push(newFile);
+      return {
+        status: 'successfully',
+        body: newFile,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
     }
-
-    getFolder(path).push(newFile);
   }
 
   checkFileExist(path, name) {
     return !!this.getFile(path === '/' ? `${path}${name}` : `${path}/${name}`)
-      .body;
-  }
-
-  checkFolderExist(path, name) {
-    return !!this.getFolder(path === '/' ? `${path}${name}` : `${path}/${name}`)
       .body;
   }
 
@@ -299,9 +305,20 @@ class VirtualHardDrive {
   }
 
   updateFile(path, newFile) {
-    const file = this.getFile(path);
-    file.size = newFile.size;
-    file.body = newFile.body;
+    try {
+      const file = this.getFile(path).body;
+      file.size = newFile.size;
+      file.body = newFile.body;
+      return {
+        status: 'successfully',
+        body: newFile,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
   }
 
   renameFolder(path, newName) {

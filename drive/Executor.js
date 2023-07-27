@@ -21,6 +21,11 @@ class Executor {
     return object?.files || [];
   }
 
+  getPathOpenFiles(appName) {
+    const object = this.getFilesQueue().find((item) => item.app === appName);
+    return object?.path || null;
+  }
+
   changeIndexesOpenApps(topAppName) {
     if (topAppName) {
       this.driver.reorderOpenApps(topAppName);
