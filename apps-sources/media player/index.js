@@ -24,7 +24,7 @@
   rootElement.prepend(header);
 
   const videoTitle = document.createElement('span');
-  videoTitle.innerText = currentVideo.name;
+  videoTitle.innerText = currentVideo?.name || '';
 
   const controlPanel = document.createElement('div');
   controlPanel.classList.add('control-panel');
@@ -74,7 +74,7 @@
   appWrapper.append(currentVideoContainer);
   const openVideo = document.createElement('video');
   currentVideoContainer.append(openVideo);
-  openVideo.src = currentVideo.body;
+  openVideo.src = currentVideo?.body || '';
   openVideo.controls = true;
   openVideo.autoplay = true;
   openVideo.muted = true;
@@ -99,7 +99,9 @@
     });
   }
 
-  fillPlayList();
+  if (filesToOpen.lenght) {
+    fillPlayList();
+  }
 
   playList.addEventListener('click', (event) => changeActiveVideo(event));
 

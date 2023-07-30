@@ -21,6 +21,11 @@ class Executor {
     return object?.files || [];
   }
 
+  getPathOpenFiles(appName) {
+    const object = this.getFilesQueue().find((item) => item.app === appName);
+    return object?.path || null;
+  }
+
   changeIndexesOpenApps(topAppName) {
     if (topAppName) {
       this.driver.reorderOpenApps(topAppName);
@@ -42,6 +47,14 @@ class Executor {
       this.filesQueueToOpen.push(object);
     } else {
       this.filesQueueToOpen.splice(indexExistingAppQueue, -1, object);
+    }
+  }
+
+  removeFilesQueue(appName) {
+    const filesQueue = this.getFilesQueue();
+    const index = filesQueue.findIndex((item) => item.app === appName);
+    if (index !== -1) {
+      filesQueue.splice(index, 1);
     }
   }
 
@@ -73,6 +86,7 @@ class Executor {
     if (files.length) {
       driver.removeOpenApp(appName);
       this.changeIndexesOpenApps();
+      this.removeFilesQueue(appName);
     }
   }
 }

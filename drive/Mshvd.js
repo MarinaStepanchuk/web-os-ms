@@ -2,7 +2,7 @@ const convertBase64 = (file) => {
   return new Promise((resolve, reject) => {
     const fileReader = new FileReader();
 
-    if (file.type.includes('text') || file.type.includes('js')) {
+    if (file.type.includes('text')) {
       fileReader.readAsText(file);
     } else {
       fileReader.readAsDataURL(file);
@@ -96,14 +96,23 @@ class Msvhd {
   async createFile(path, file) {
     const fileString = await convertBase64(file);
     const newFile = {
+      id: new Date(),
       name: file.name,
       mime: file.type,
       size: file.size,
       body: fileString,
       type: 'file',
+      accessRights: {
+        creator: this.hardDrive.getActiveUser(),
+        public: true,
+        access: {
+          reed: [],
+          modify: [],
+        },
+      },
     };
 
-    this.hardDrive.writeFile(path, newFile);
+    return this.hardDrive.writeFile(path, newFile);
   }
 
   createFolder(path, name) {
@@ -121,14 +130,11 @@ class Msvhd {
   async updateFile(path, file) {
     const fileString = await convertBase64(file);
     const newFile = {
-      name: file.name,
-      mime: file.type,
       size: file.size,
       body: fileString,
-      type: 'file',
     };
 
-    this.hardDrive.updateFile(path, newFile);
+    return this.hardDrive.updateFile(path, newFile);
   }
 
   renameFile(path, newName) {
