@@ -29,7 +29,8 @@
   let mouseDownY = null;
 
   const rootElement = document.getElementById('file-reader');
-  rootElement.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
+  const zIndexApp = driver.getOpenApps().indexOf(appName) * 10;
+  rootElement.style.zIndex = zIndexApp;
   let fullScreenMode = false;
   rootElement.addEventListener('mousedown', (event) => {
     if (event.target.closest('.close-button')) {
@@ -570,8 +571,9 @@
       button.classList.add(item.split(' ').join('-'));
       menu.append(button);
     });
-    rootElement.append(menu);
-
+    const desktop = document.querySelector('.desktop');
+    desktop.append(menu);
+    menu.style.zIndex = zIndexApp + 1;
     menuPositioning(event, menu);
 
     menu.addEventListener('click', async (event) => {
@@ -603,24 +605,19 @@
 
   function menuPositioning(event, menu) {
     const rectMenu = menu.getBoundingClientRect();
-    const rectContainer = rootElement.getBoundingClientRect();
     const windowHeight = document.body.clientHeight;
     const windowWidth = document.body.clientWidth;
 
-    if (rectMenu.height > windowHeight - event.clientY) {
-      menu.style.top = `${
-        event.clientY - rectContainer.top - rectMenu.height
-      }px`;
+    if (rectMenu.height > windowHeight - 45 - event.clientY) {
+      menu.style.top = `${event.clientY - rectMenu.height}px`;
     } else {
-      menu.style.top = `${event.clientY - rectContainer.top}px`;
+      menu.style.top = `${event.clientY}px`;
     }
 
     if (rectMenu.width > windowWidth - event.clientX) {
-      menu.style.left = `${
-        event.clientX - rectContainer.left - rectMenu.width
-      }px`;
+      menu.style.left = `${event.clientX - rectMenu.width}px`;
     } else {
-      menu.style.left = `${event.clientX - rectContainer.left}px`;
+      menu.style.left = `${event.clientX}px`;
     }
   }
 
@@ -860,7 +857,9 @@
       button.classList.add(item.split(' ').join('-'));
       menu.append(button);
     });
-    rootElement.append(menu);
+    const desktop = document.querySelector('.desktop');
+    desktop.append(menu);
+    menu.style.zIndex = zIndexApp + 1;
 
     menuPositioning(event, menu);
 

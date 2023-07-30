@@ -224,8 +224,8 @@
   background-color: #93929261;
 }
 
-#file-reader .file-context-menu,
-#file-reader .common-context-menu {
+.file-context-menu,
+.common-context-menu {
   position: absolute;
   width: 100px;
   padding: 10px 0;
@@ -238,25 +238,25 @@
   border-radius: 10px;
 }
 
-#file-reader .file-context-menu li,
-#file-reader .common-context-menu li {
+.file-context-menu li,
+.common-context-menu li {
   padding: 5px 10px;
   list-style: none;
   width: 100%;
   box-sizing: border-box;
 }
 
-#file-reader .file-context-menu li:hover,
-#file-reader .common-context-menu li:hover {
+.file-context-menu li:hover,
+.common-context-menu li:hover {
   background-color: #f7f1f1;
 }
 
-#file-reader .file-context-menu li::first-letter,
-#file-reader .common-context-menu li::first-letter {
+.file-context-menu li::first-letter,
+.common-context-menu li::first-letter {
   text-transform: uppercase;
 }
 
-#file-reader .copied {
+.copied {
   opacity: 0.5;
 }
 
