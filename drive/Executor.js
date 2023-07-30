@@ -50,6 +50,14 @@ class Executor {
     }
   }
 
+  removeFilesQueue(appName) {
+    const filesQueue = this.getFilesQueue();
+    const index = filesQueue.findIndex((item) => item.app === appName);
+    if (index !== -1) {
+      filesQueue.splice(index, 1);
+    }
+  }
+
   getDriver() {
     return this.driver;
   }
@@ -78,6 +86,7 @@ class Executor {
     if (files.length) {
       driver.removeOpenApp(appName);
       this.changeIndexesOpenApps();
+      this.removeFilesQueue(appName);
     }
   }
 }

@@ -67,11 +67,19 @@
 
   controlPanel.append(turnButton, expandButton, closeButton);
 
-  closeButton.addEventListener('click', () => {
-    //save all files
-
+  closeButton.addEventListener('click', async () => {
+    const lastTab = [...tabList.querySelectorAll('.tab-item')].at(-1);
+    changeActiveTab(lastTab);
+    await closeTabItem();
     executor.closeApp(appName);
   });
+
+  async function closeTabItem() {
+    const openTabs = [...tabList.querySelectorAll('.tab-item')].reverse();
+    for (let currentElement of openTabs) {
+      await removeTab(currentElement);
+    }
+  }
 
   expandButton.addEventListener('click', () => {
     if (fullScreenMode) {
@@ -122,19 +130,19 @@
   editorContainer.append(operatingButtons, editor);
 
   addFileButton.addEventListener('click', createNewTab);
-  tabList.addEventListener('click', (event) => {
+  tabList.addEventListener('click', async (event) => {
     if (!event.target.closest('.tab-item')) {
       return;
     }
     const clickedElement = event.target.closest('.tab-item');
 
     if (event.target.classList.contains('close-tab-button')) {
-      removeTab(clickedElement);
+      await removeTab(clickedElement);
       return;
     }
 
     changeActiveTab(clickedElement);
-    refreshEditor();
+    updateEditor();
   });
 
   cancelButton.addEventListener('click', (event) => {
@@ -142,7 +150,7 @@
       .closest('.editor-container')
       .getAttribute('data-index');
     const removedTab = tabList.querySelector(`[data-index="${tabIndex}"]`);
-    removeTabWithoutSaving(removedTab);
+    closeTab(removedTab);
   });
 
   saveButton.addEventListener('click', async (event) => {
@@ -161,9 +169,9 @@
     const fileObject = filesToOpen[tabIndex];
     const isNewFile = fileObject.file.newFile;
     if (isNewFile) {
-      saveNewFile(fileObject);
+      await saveNewFile(fileObject);
     } else {
-      updateFile(fileObject);
+      await updateFile(fileObject);
     }
   }
 
@@ -201,28 +209,29 @@
     }
   }
 
-  function removeTab(clickedElement) {
+  async function removeTab(clickedElement) {
     const removeFileIndex = +clickedElement.getAttribute('data-index');
+    const removeFileName = clickedElement.getAttribute('data-name');
     const fileObject = filesToOpen[removeFileIndex];
 
     if (!fileObject.editable) {
-      removeTabWithoutSaving(clickedElement);
+      closeTab(clickedElement);
     } else {
       const willSaveFile = confirm(
-        'The file has been updated. Save before closing?'
+        `The file ${removeFileName} has been updated. Save before closing?`
       );
 
       if (willSaveFile) {
         saveCurrentDataFile(removeFileIndex, fileObject.file.body);
-        saveFile(removeFileIndex);
-        removeTabWithoutSaving(clickedElement);
+        await saveFile(removeFileIndex);
+        closeTab(clickedElement);
       } else {
-        removeTabWithoutSaving(clickedElement);
+        closeTab(clickedElement);
       }
     }
   }
 
-  function removeTabWithoutSaving(removedTab) {
+  function closeTab(removedTab) {
     const removeFileIndex = +removedTab.getAttribute('data-index');
 
     if (filesToOpen.length === 1) {
@@ -241,7 +250,7 @@
       tabActiveIndex = filesToOpen.length - 1;
       const element = tabList.querySelector(`[data-index="${tabActiveIndex}"]`);
       changeActiveTab(element);
-      refreshEditor();
+      updateEditor();
     }
   }
 
@@ -302,10 +311,10 @@
     newItem.classList.add('active-tab');
     newItem.setAttribute('data-index', tabActiveIndex);
     tabList.append(newItem);
-    refreshEditor();
+    updateEditor();
   }
 
-  function refreshEditor() {
+  function updateEditor() {
     const openFile = filesToOpen[tabActiveIndex].file;
     editorContainer.setAttribute('data-name', openFile.name);
     editorContainer.setAttribute('data-index', tabActiveIndex);
