@@ -19,9 +19,7 @@
     (item) => item.name === 'active-user.txt'
   ).body;
 
-  let activeUser = fileActiveUser
-    ? window.atob(fileActiveUser.split('base64,')[1])
-    : 'admin';
+  let activeUser = fileActiveUser || 'admin';
 
   const appWrapper = document.querySelector('.login-wrapper');
   const formContainer = document.createElement('div');
