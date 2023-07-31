@@ -450,11 +450,11 @@ class VirtualHardDrive {
     }
   }
 
-  pasteFile(pastePath, bufer, previousAction) {
+  pasteFile(pastePath, buffer, previousAction) {
     try {
       const folder = this.getFolder(pastePath).body;
-      const file = bufer.file;
-      const buferFilePath = bufer.path;
+      const file = buffer.file;
+      const bufferFilePath = buffer.path;
 
       if (!folder) {
         throw new Error('copy error');
@@ -493,12 +493,11 @@ class VirtualHardDrive {
       };
 
       folder.push(newFile);
-      console.log(previousAction);
       if (previousAction === 'cut') {
         this.removeFile(
-          buferFilePath === '/'
-            ? `${buferFilePath}${file.name}`
-            : `${buferFilePath}/${file.name}`
+          bufferFilePath === '/'
+            ? `${bufferFilePath}${file.name}`
+            : `${bufferFilePath}/${file.name}`
         );
       }
 
@@ -514,11 +513,11 @@ class VirtualHardDrive {
     }
   }
 
-  pasteFolder(pastePath, bufer, previousAction) {
+  pasteFolder(pastePath, buffer, previousAction) {
     try {
       const folder = this.getFolder(pastePath).body;
-      const file = bufer.file;
-      const buferFilePath = bufer.path;
+      const file = buffer.file;
+      const bufferFilePath = buffer.path;
 
       if (!folder) {
         throw new Error('copy error');
@@ -551,9 +550,9 @@ class VirtualHardDrive {
 
       if (previousAction === 'cut') {
         this.removeFolder(
-          buferFilePath === '/'
-            ? `${buferFilePath}${file.name}`
-            : `${buferFilePath}/${file.name}`
+          bufferFilePath === '/'
+            ? `${bufferFilePath}${file.name}`
+            : `${bufferFilePath}/${file.name}`
         );
       }
 
