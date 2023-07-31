@@ -146,7 +146,7 @@ class VirtualHardDrive {
       const fileExists = this.checkFileExist(path, newFile.name);
 
       if (fileExists) {
-        throw new Error('File with this name already exists');
+        throw new Error(`File with ${newFile.name} already exists`);
       }
 
       this.getFolder(path).body.push(newFile);
@@ -350,7 +350,7 @@ class VirtualHardDrive {
       );
 
       if (isExists) {
-        throw new Error('a file with this name already exists');
+        throw new Error('File with this name already exists');
       }
 
       folder.name = newName;
@@ -388,7 +388,7 @@ class VirtualHardDrive {
         );
 
         if (isExists) {
-          throw new Error('a file with this name already exists');
+          throw new Error('File with this name already exists');
         }
 
         file.name = newName;
@@ -417,7 +417,7 @@ class VirtualHardDrive {
       );
 
       if (isExists) {
-        throw new Error('a file with this name already exists');
+        throw new Error('File with this name already exists');
       }
 
       file.name = newName;
