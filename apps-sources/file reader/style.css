@@ -264,3 +264,17 @@
   position: absolute;
   background-color: rgba(167, 57, 57, 0.403);
 }
+
+.drag-file {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: 85%;
+  background-repeat: no-repeat;
+  background-position: center;
+  font-size: 18px;
+  background-color: #93929261;
+}
