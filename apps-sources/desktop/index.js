@@ -209,6 +209,7 @@
       } else {
         openingByTypeMap.unknown();
       }
+      deselectActiveFiles();
     });
 
     if (images.length > 0) {
@@ -246,6 +247,7 @@
       });
       executor.startApp('notepad');
     }
+    deselectActiveFiles();
   };
 
   function getAppNameByPath(path) {
@@ -681,11 +683,11 @@
 
   function copyFiles(selectedFiles) {
     driver.actionType = actions.copy;
-    driver.clearBufer();
-    selectedFiles.forEach((file) => copyFileInBufer(file));
+    driver.clearBuffer();
+    selectedFiles.forEach((file) => copyFileInBuffer(file));
   }
 
-  function copyFileInBufer(fileElement) {
+  function copyFileInBuffer(fileElement) {
     deselectActiveFiles();
 
     fileElement.classList.add('copied');
@@ -725,14 +727,14 @@
 
   function cutFile(selectedFiles) {
     driver.actionType = actions.cut;
-    driver.clearBufer();
-    selectedFiles.forEach((file) => copyFileInBufer(file));
+    driver.clearBuffer();
+    selectedFiles.forEach((file) => copyFileInBuffer(file));
   }
 
   async function pasteFiles(clickedFolder) {
-    const bufer = driver.getFileFromBufer();
+    const buffer = driver.getFileFromBuffer();
 
-    if (!bufer.length) {
+    if (!buffer.length) {
       return;
     }
 
@@ -743,15 +745,15 @@
         clickedFolder.querySelector('.file-description').innerText;
       const filePath = `${desktopPath}/${folderName}`;
 
-      for (const buferItem of bufer) {
-        if (buferItem.path === filePath && driver.actionType === 'cut') {
+      for (const bufferItem of buffer) {
+        if (bufferItem.path === filePath && driver.actionType === 'cut') {
           deselectCopyFiles();
           return;
         }
         const result =
-          buferItem.file.type === 'folder'
-            ? driver.pasteFolder(filePath, buferItem)
-            : driver.pasteFile(filePath, buferItem);
+          bufferItem.file.type === 'folder'
+            ? driver.pasteFolder(filePath, bufferItem)
+            : driver.pasteFile(filePath, bufferItem);
 
         if (result.status === 'error') {
           alert(result.message);
@@ -766,15 +768,15 @@
 
     const filePath = desktopPath;
 
-    for (const buferItem of bufer) {
-      if (buferItem.path === filePath && driver.actionType === 'cut') {
+    for (const bufferItem of buffer) {
+      if (bufferItem.path === filePath && driver.actionType === 'cut') {
         deselectCopyFiles();
         return;
       }
       const result =
-        buferItem.file.type === 'folder'
-          ? driver.pasteFolder(filePath, buferItem)
-          : driver.pasteFile(filePath, buferItem);
+        bufferItem.file.type === 'folder'
+          ? driver.pasteFolder(filePath, bufferItem)
+          : driver.pasteFile(filePath, bufferItem);
 
       if (result.status === 'error') {
         alert(result.message);
@@ -1039,5 +1041,6 @@
       });
       executor.startApp(appName);
     }
+    deselectActiveFiles();
   }
 })();
