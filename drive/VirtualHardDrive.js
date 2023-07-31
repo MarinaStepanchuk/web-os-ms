@@ -493,7 +493,7 @@ class VirtualHardDrive {
       };
 
       folder.push(newFile);
-
+      console.log(previousAction);
       if (previousAction === 'cut') {
         this.removeFile(
           buferFilePath === '/'

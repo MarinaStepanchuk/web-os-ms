@@ -24,6 +24,7 @@ class Msvhd {
 
   constructor() {
     this.hardDrive = new VirtualHardDrive();
+    this.actionType = '';
   }
 
   getFileFromBufer() {
@@ -37,6 +38,10 @@ class Msvhd {
 
   setActiveUser(name) {
     this.hardDrive.setActiveUser(name);
+  }
+
+  getActiveUser() {
+    return this.hardDrive.getActiveUser();
   }
 
   clearBufer() {
@@ -155,21 +160,21 @@ class Msvhd {
     return result;
   }
 
-  pasteFile(pastePath, buferItem, previousAction) {
+  pasteFile(pastePath, buferItem) {
     const result = this.hardDrive.pasteFile(
       pastePath,
       buferItem,
-      previousAction
+      this.actionType
     );
 
     return result;
   }
 
-  pasteFolder(pastePath, buferItem, previousAction) {
+  pasteFolder(pastePath, buferItem) {
     const result = this.hardDrive.pasteFolder(
       pastePath,
       buferItem,
-      previousAction
+      this.actionType
     );
 
     return result;

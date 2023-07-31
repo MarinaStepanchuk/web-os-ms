@@ -24,6 +24,7 @@ body {
   overflow: hidden;
   will-change: transform, left, top;
   contain: layout;
+  user-select: none;
 }
 
 .desktop-wrapper .desktop-list {
@@ -33,6 +34,17 @@ body {
   gap: 10px;
   justify-content: flex-start;
   height: 100%;
+}
+
+.desktop-wrapper .desktop-list .input-new-name {
+  width: 100%;
+  outline: none;
+  border: none;
+  background-color: transparent;
+  border-bottom: 1px solid #cacaca;
+  color: white;
+  -webkit-text-stroke: 0.2px #000;
+  text-stroke: 1px #000;
 }
 
 .desktop-wrapper .desktop-item {
@@ -67,6 +79,11 @@ body {
   -webkit-text-shadow: 0px 0px 6px rgb(0, 0, 0);
   -moz-text-shadow: 0px 0px 6px rgb(0, 0, 0);
   text-shadow: 0px 0px 6px rgb(0, 0, 0);
+  overflow: hidden;
+  word-break: break-all;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
 }
 
 .desktop-wrapper footer {
@@ -98,4 +115,53 @@ body {
     7px 7px 20px 0px rgba(0, 0, 0, 0.1), 4px 4px 5px 0px rgba(0, 0, 0, 0.1);
   border-radius: 5px;
   transform: scale(1.05);
+}
+
+.desktop-wrapper .desktop-item.active-desktop-item {
+  background-color: #25131361;
+}
+
+.file-context-menu,
+.common-context-menu {
+  position: absolute;
+  width: 100px;
+  padding: 10px 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 12px;
+  background-color: #fff;
+  border-radius: 10px;
+}
+
+.file-context-menu li,
+.common-context-menu li {
+  padding: 5px 10px;
+  list-style: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.file-context-menu li:hover,
+.common-context-menu li:hover {
+  background-color: #f7f1f1;
+}
+
+.file-context-menu li::first-letter,
+.common-context-menu li::first-letter {
+  text-transform: uppercase;
+}
+
+.copied {
+  opacity: 0.5;
+}
+
+.desktop-wrapper .selected-area {
+  position: absolute;
+  background-color: rgba(167, 57, 57, 0.403);
+}
+
+.desktop-wrapper .desctop-item.disabled-hover {
+  pointer-events: none;
 }
