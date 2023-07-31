@@ -256,6 +256,19 @@
   text-transform: uppercase;
 }
 
+.common-context-menu .upload-files-input {
+  opacity: 0;
+  position: absolute;
+  z-index: -1;
+  overflow: hidden;
+  width: 0.4px;
+  height: 0.4px;
+}
+
+.common-context-menu .upload-files-label {
+  width: 100%;
+}
+
 .copied {
   opacity: 0.5;
 }
