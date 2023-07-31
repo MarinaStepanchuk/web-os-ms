@@ -856,6 +856,24 @@
     menu.classList.add('context-menu');
     const buttons = [actions.paste, actions.loadFile, actions.createFolder];
     buttons.forEach((item) => {
+      if (item === actions.loadFile) {
+        const button = document.createElement('li');
+        const label = document.createElement('label');
+        label.classList.add('upload-files-label');
+        label.innerText = item;
+        button.append(label);
+        const inputFile = document.createElement('input');
+        inputFile.classList.add('upload-files-input');
+        inputFile.type = 'file';
+        inputFile.multiple = true;
+        label.append(inputFile);
+        menu.append(button);
+        inputFile.addEventListener('change', async (event) => {
+          const files = inputFile.files;
+          await loadFilesViaInput(files);
+        });
+        return;
+      }
       const button = document.createElement('li');
       button.innerText = item;
       button.classList.add(item.split(' ').join('-'));
@@ -865,6 +883,20 @@
     desktop.append(menu);
     menu.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
 
+    async function loadFilesViaInput(files) {
+      const currentPath = path.length === 0 ? '/' : `/${path.join('/')}`;
+      rootElement.style.opacity = 0.8;
+      for (let i = 0; i < files.length; i++) {
+        const result = await driver.createFile(currentPath, files[i]);
+        await driver.updateDrive();
+        if (result.status === 'error') {
+          alert(result.message);
+        }
+      }
+      fillFileReaderBody(path);
+      rootElement.style.opacity = 1;
+    }
+
     menuPositioning(event, menu);
 
     menu.addEventListener('click', async (event) => {
@@ -873,9 +905,6 @@
       const actionType = event.target.innerText.toLowerCase();
       if (actionType === actions.createFolder) {
         addNewFolder();
-      }
-
-      if (actionType === actions.loadFile) {
       }
 
       if (actionType === actions.paste) {
@@ -934,7 +963,7 @@
 
     const result = driver.createFolder(
       `/${path.join('/')}`,
-      fileName || 'New file'
+      fileName || 'New folder'
     );
 
     if (result.status === 'successfully') {
