@@ -2,16 +2,19 @@
   const appName = 'file reader';
   const filesIcons = driver.readFolder('/apps/file reader/assets/icons').body;
 
-  let path = [];
+  let path = executor.fileReaderPath
+    ? executor.fileReaderPath
+        .split('/')
+        .filter((item) => item)
+        .map((item) => [item])
+    : [];
 
   const history = {
     position: 0,
-    memory: [[]],
+    memory: [path.length ? [...path] : []],
   };
 
   let previousNameFile = '';
-
-  let actionType = '';
 
   const actions = {
     paste: 'paste',
@@ -488,7 +491,7 @@
   }
 
   function deselectCopyFiles() {
-    const copiedFiles = filesContainer.querySelectorAll('.copied');
+    const copiedFiles = document.querySelectorAll('.copied');
     copiedFiles.forEach((item) => item.classList.remove('copied'));
   }
 
@@ -518,6 +521,7 @@
 
   filesContainer.addEventListener('contextmenu', (event) => {
     event.preventDefault();
+    event.stopPropagation();
     const selectedFiles = filesContainer.querySelectorAll('.active-item');
 
     if (selectedFiles.length === 1) {
@@ -626,13 +630,13 @@
   }
 
   function copyFiles(selectedFiles) {
-    actionType = actions.copy;
+    driver.actionType = actions.copy;
     driver.clearBufer();
     selectedFiles.forEach((file) => copyFileInBufer(file));
   }
 
   function cutFile(selectedFiles) {
-    actionType = actions.cut;
+    driver.actionType = actions.cut;
     driver.clearBufer();
     selectedFiles.forEach((file) => copyFileInBufer(file));
   }
@@ -697,47 +701,55 @@
           : `/${path.join('/')}/${folderName}`;
 
       for (const buferItem of bufer) {
-        if (buferItem.path === filePath && actionType === 'cut') {
+        if (buferItem.path === filePath && driver.actionType === 'cut') {
           deselectCopyFiles();
           return;
         }
-
         const result =
           buferItem.file.type === 'folder'
-            ? driver.pasteFolder(filePath, buferItem, actionType)
-            : driver.pasteFile(filePath, buferItem, actionType);
+            ? driver.pasteFolder(filePath, buferItem)
+            : driver.pasteFile(filePath, buferItem);
 
         if (result.status === 'error') {
           alert(result.message);
         }
       }
 
+      deselectCopyFiles();
       await driver.updateDrive();
       fillFileReaderBody(path);
-      return;
+
+      const activeUser = hardDrive.getActiveUser();
+      if (bufer[0].path === `/users/${activeUser}/desktop`) {
+        executor.updateDesktop();
+      }
     }
 
     const filePath = path.length === 0 ? `/` : `/${path.join('/')}`;
 
     for (const buferItem of bufer) {
-      if (buferItem.path === filePath && actionType === 'cut') {
+      if (buferItem.path === filePath && driver.actionType === 'cut') {
         deselectCopyFiles();
         return;
       }
 
       const result =
         buferItem.file.type === 'folder'
-          ? driver.pasteFolder(filePath, buferItem, actionType)
-          : driver.pasteFile(filePath, buferItem, actionType);
+          ? driver.pasteFolder(filePath, buferItem)
+          : driver.pasteFile(filePath, buferItem);
 
       if (result.status === 'error') {
         alert(result.message);
       }
     }
 
+    deselectCopyFiles();
     await driver.updateDrive();
     fillFileReaderBody(path);
-    return;
+    const activeUser = hardDrive.getActiveUser();
+    if (bufer[0].path === `/users/${activeUser}/desktop`) {
+      executor.updateDesktop();
+    }
   }
 
   function getFileOptionsFromFileElement(fileElement) {
@@ -908,7 +920,7 @@
       }
 
       if (actionType === actions.paste) {
-        pasteFiles();
+        await pasteFiles();
       }
     });
   }
@@ -984,6 +996,7 @@
   let initialScroll = null;
 
   filesContainer.addEventListener('mousedown', (event) => {
+    event.stopPropagation();
     if (!event.target.closest('.active-item')) {
       startSelectingArea(event);
     }
@@ -1164,11 +1177,16 @@
       element.classList.add('disabled-hover');
     });
 
+    const selectedArea = filesContainer.querySelector('.selected-area');
+
+    if (!selectedArea) {
+      return;
+    }
+
     horizontalPositioningSelectedArea(event);
 
     verticalPositionSelectedArea(event);
 
-    const selectedArea = filesContainer.querySelector('.selected-area');
     const rectArea = selectedArea.getBoundingClientRect();
     const area = {
       topLeft: { x: rectArea.left, y: rectArea.top },
@@ -1298,8 +1316,9 @@
     );
   }
 
-  function removingSelectedArea() {
-    if (!driver.getOpenApps().at(-1) === 'file reader') {
+  function removingSelectedArea(event) {
+    event.stopPropagation();
+    if (!driver.getOpenApps().at(-1) === 'file reader' || !mouseIsDown) {
       return;
     }
 
