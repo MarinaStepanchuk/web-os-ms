@@ -1,5 +1,7 @@
 (() => {
   const appName = 'desktop';
+  const activeUser = hardDrive.getActiveUser();
+  const desktopPath = `/users/${activeUser}/desktop`;
   const getArrNameByPath = (path) => {
     const app = path.split('/').at(-1).split('.');
     app.splice(-1, 1);
@@ -17,12 +19,8 @@
   const wallpaperUrl = appFolder.find(
     (item) => item.name === 'wallpapper.jpg'
   ).body;
-  const activeUser = hardDrive.getActiveUser();
   sectionDesctop.style.backgroundImage = `url(${wallpaperUrl})`;
   const userFolder = driver.readFolder(`/users/${activeUser}`).body;
-  const userDesctopFiles = userFolder.find(
-    (item) => item.name === 'desktop' && item.type === 'folder'
-  ).children;
 
   const desctopList = document.createElement('div');
   desctopList.classList.add('desktop-list');
@@ -34,6 +32,7 @@
     const icon = document.createElement('div');
     icon.classList.add('icon');
     const title = document.createElement('span');
+    title.classList.add('file-description');
     title.innerText = file.name;
     desktopItem.append(icon, title);
     const defaultIcons = driver.readFolder('/apps/default icons').body;
@@ -88,40 +87,138 @@
     }
   };
 
-  userDesctopFiles.forEach((file) => {
-    const icon = getIconByType(file);
-    desctopList.append(icon);
-  });
+  function fillDesctop() {
+    desctopList.innerHTML = '';
+    const userFolder = driver.readFolder(`/users/${activeUser}`).body;
+    const userDesctopFiles = userFolder.find(
+      (item) => item.name === 'desktop' && item.type === 'folder'
+    ).children;
+    userDesctopFiles.forEach((file) => {
+      const icon = getIconByType(file);
+      desctopList.append(icon);
+    });
+  }
+
+  fillDesctop();
 
   sectionDesctop.addEventListener('dblclick', (event) => {
     const file = event.target.closest('.desktop-item');
-    if (file) {
-      const type = event.target
-        .closest('.desktop-item')
-        .getAttribute('data-type');
-      switch (type) {
-        case 'exe':
-          const appName = getArrNameByPath(file.getAttribute('data-path'));
-          executor.startApp(appName);
-          break;
-        case 'image':
-          executor.startApp('photos');
-          break;
-        case 'video':
-          executor.startApp('media player');
-          break;
-        case 'audio':
-          executor.startApp('audio player');
-          break;
-        case 'text':
-          executor.startApp('notepad');
-          break;
-        default:
-          alert('Unknown extension');
-          break;
-      }
+
+    if (!file) {
+      return;
     }
+
+    openFiles([file]);
   });
+
+  const openFiles = (files) => {
+    const images = [];
+    const videos = [];
+    const audios = [];
+    const textFiles = [];
+
+    files.forEach((file) => {
+      const type = file.getAttribute('data-type');
+      const name = file.querySelector('.file-description').innerText;
+      const appPath = file.getAttribute('data-path');
+
+      const openingByTypeMap = {
+        exe: () => executor.startApp(getAppNameByPath(appPath)),
+        label: () => executor.startApp(getAppNameByPath(appPath)),
+        image: () => {
+          const filePath = `${desktopPath}/${name}`;
+          const searchFile = driver.readFile(filePath);
+          if (searchFile.status === 'error') {
+            alert(`can't open file ${name}`);
+            return;
+          }
+          images.push(searchFile.body);
+        },
+        video: () => {
+          const filePath = `${desktopPath}/${name}`;
+          const searchFile = driver.readFile(filePath);
+          if (searchFile.status === 'error') {
+            alert(`can't open file ${name}`);
+            return;
+          }
+          videos.push(searchFile.body);
+        },
+        audio: () => {
+          const filePath = `${desktopPath}/${name}`;
+          const searchFile = driver.readFile(filePath);
+          if (searchFile.status === 'error') {
+            alert(`can't open file ${name}`);
+            return;
+          }
+          audios.push(searchFile.body);
+        },
+        text: () => {
+          const filePath = `${desktopPath}/${name}`;
+          const searchFile = driver.readFile(filePath);
+          if (searchFile.status === 'error') {
+            alert(`can't open file ${name}`);
+            return;
+          }
+          textFiles.push(searchFile.body);
+        },
+        unknown: () => alert('Unknown extension'),
+      };
+
+      const action = openingByTypeMap[type];
+      if (action) {
+        openingByTypeMap[type]();
+      } else {
+        openingByTypeMap.unknown();
+      }
+    });
+
+    if (images.length > 0) {
+      executor.setFilesQueue({
+        path: desktopPath,
+        app: 'gallery',
+        files: [...images],
+      });
+      executor.startApp('gallery');
+    }
+
+    if (videos.length > 0) {
+      executor.setFilesQueue({
+        path: desktopPath,
+        app: 'media player',
+        files: [...videos],
+      });
+      executor.startApp('media player');
+    }
+
+    if (audios.length > 0) {
+      executor.setFilesQueue({
+        path: desktopPath,
+        app: 'audio player',
+        files: [...audios],
+      });
+      executor.startApp('audio player');
+    }
+
+    if (textFiles.length > 0) {
+      executor.setFilesQueue({
+        path: desktopPath,
+        app: 'notepad',
+        files: [...textFiles],
+      });
+      executor.startApp('notepad');
+    }
+  };
+
+  function getAppNameByPath(path) {
+    const app = [...path.split('/').at(-1).split('.')];
+
+    if (app.length === 1) {
+      return app.join('.');
+    }
+
+    app.splice(-1, 1);
+    return app.join('.');
+  }
 
   const activeApps = document.createElement('div');
   activeApps.classList.add('active-apps');
