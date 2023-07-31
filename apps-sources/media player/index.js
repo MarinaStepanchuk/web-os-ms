@@ -99,7 +99,7 @@
     });
   }
 
-  if (filesToOpen.lenght) {
+  if (filesToOpen.length) {
     fillPlayList();
   }
 

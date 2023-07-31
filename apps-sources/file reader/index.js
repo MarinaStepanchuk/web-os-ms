@@ -481,9 +481,10 @@
 
   function deselectActiveFiles() {
     const selectedElements = document.querySelectorAll('.active-item');
-    selectedElements.forEach((element) =>
-      element.classList.remove('active-item')
-    );
+    selectedElements.forEach((element) => {
+      element.classList.remove('active-item');
+      element.draggable = false;
+    });
   }
 
   function deselectCopyFiles() {
@@ -501,6 +502,7 @@
     const file = event.target.closest('.file-item');
     if (file) {
       file.classList.add('active-item');
+      file.draggable = true;
     }
   });
 
@@ -519,9 +521,10 @@
     const selectedFiles = filesContainer.querySelectorAll('.active-item');
 
     if (selectedFiles.length === 1) {
-      selectedFiles.forEach((element) =>
-        element.classList.remove('active-item')
-      );
+      selectedFiles.forEach((element) => {
+        element.classList.remove('active-item');
+        element.draggable = false;
+      });
     }
 
     const file = event.target.closest('.file-item');
@@ -544,6 +547,7 @@
     const clickedElement = event.target.closest('.file-item');
     if (!clickedElement.classList.contains('active-item')) {
       clickedElement.classList.add('active-item');
+      clickedElement.draggable = true;
     }
     const selectedFiles = filesContainer.querySelectorAll('.active-item');
     const type = clickedElement.getAttribute('data-type');
@@ -573,7 +577,7 @@
     });
     const desktop = document.querySelector('.desktop');
     desktop.append(menu);
-    menu.style.zIndex = zIndexApp + 1;
+    menu.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
     menuPositioning(event, menu);
 
     menu.addEventListener('click', async (event) => {
@@ -595,7 +599,7 @@
       },
       [actions.delete]: async () => await deleteFiles(selectedFiles),
       [actions.rename]: () => renameFile(clickedElement),
-      [actions.paste]: () => pasteFiles(clickedElement),
+      [actions.paste]: async () => await pasteFiles(clickedElement),
       [actions.copy]: () => copyFiles(selectedFiles),
       [actions.cut]: () => cutFile(selectedFiles),
     };
@@ -859,7 +863,7 @@
     });
     const desktop = document.querySelector('.desktop');
     desktop.append(menu);
-    menu.style.zIndex = zIndexApp + 1;
+    menu.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
 
     menuPositioning(event, menu);
 
@@ -950,9 +954,135 @@
   let filesCollection = null;
   let initialScroll = null;
 
-  filesContainer.addEventListener('mousedown', startSelectingArea);
+  filesContainer.addEventListener('mousedown', (event) => {
+    if (!event.target.closest('.active-item')) {
+      startSelectingArea(event);
+    }
+  });
   filesContainer.addEventListener('mousemove', moveSelectedArea);
   filesContainer.addEventListener('mouseup', removingSelectedArea);
+
+  const desktop = document.querySelector('.desktop');
+  let dragged = [];
+
+  rootElement.addEventListener('dragstart', (event) => {
+    if (event.target.closest('.active-item')) {
+      dragFilesStart(event);
+    }
+  });
+
+  function dragFilesStart(event) {
+    const activeElements = document.querySelectorAll('.active-item');
+    activeElements.forEach((item) => {
+      dragged.push(item);
+    });
+
+    const dragImage = document.createElement('img');
+    dragImage.src = filesIcons.find(
+      (element) => element.name === 'unknown.png'
+    ).body;
+    event.dataTransfer.setDragImage(dragImage, 0, 0);
+
+    assignDropzoneApps(event);
+    assignDropzoneFolders(event);
+  }
+
+  function assignDropzoneApps(event) {
+    const openApps = [...desktop.querySelectorAll(`[data-type="app"]`)].filter(
+      (item) => item.id !== 'desktop' && item.id !== 'file-reader'
+    );
+    openApps.forEach((app) => {
+      app.classList.add('dropzone');
+      app.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        dragFiles(event);
+      });
+
+      app.addEventListener('drop', (event) => {
+        event.preventDefault();
+        dropFiles(event);
+      });
+    });
+  }
+
+  function assignDropzoneFolders(event) {
+    const folders = rootElement.querySelectorAll('[data-type="folder"]');
+    folders.forEach((folder) => {
+      folder.classList.add('dropzone');
+      folder.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        dragFiles(event);
+      });
+
+      folder.addEventListener('drop', (event) => {
+        event.preventDefault();
+        dropFiles(event);
+      });
+    });
+  }
+
+  function dragFiles(event) {
+    const app = event.target.closest('.dropzone');
+    if (app) {
+      executor.changeIndexesOpenApps(app.id.split('-').join(' '));
+    }
+  }
+
+  async function dropFiles(event) {
+    const dropzone = event.target.closest('.dropzone');
+
+    const folderDropZone =
+      dropzone && dropzone.getAttribute('data-type') === 'folder';
+
+    const appDropZone =
+      dropzone && dropzone.getAttribute('data-type') === 'app';
+
+    if (folderDropZone) {
+      cutFile(dragged);
+      await pasteFiles(dropzone);
+    }
+
+    if (appDropZone) {
+      const appName = dropzone.id.split('-').join(' ');
+
+      const starterAppsMap = {
+        'audio player': () => addToQueueFilesByAppType(appName, 'audio'),
+        'media player': () => addToQueueFilesByAppType(appName, 'video'),
+        gallery: () => addToQueueFilesByAppType(appName, 'image'),
+        notepad: () => addToQueueFilesByAppType(appName, 'text'),
+      };
+
+      starterAppsMap[appName]?.();
+      deselectActiveFiles();
+    }
+
+    mouseIsDown = false;
+    dragged = [];
+  }
+
+  function addToQueueFilesByAppType(appName, filesType) {
+    const currentPath = path.length === 0 ? '/' : `/${path.join('/')}`;
+    const elements = dragged.filter(
+      (element) => element.getAttribute('data-type') === filesType
+    );
+    const files = elements.map((item) => {
+      const name = item.querySelector('.file-description').innerText;
+      const filePath =
+        path.length === 0 ? `/${name}` : `/${path.join('/')}/${name}`;
+      const searchFile = driver.readFile(filePath);
+      if (searchFile.status !== 'error') {
+        return searchFile.body;
+      }
+    });
+    if (files.length > 0) {
+      executor.setFilesQueue({
+        path: currentPath,
+        app: appName,
+        files: [...files],
+      });
+      executor.startApp(appName);
+    }
+  }
 
   function startSelectingArea(event) {
     const openApps = driver.getOpenApps();
@@ -1021,9 +1151,11 @@
 
       if (elementInArea) {
         item.classList.add('active-item');
+        item.draggable = true;
         return true;
       } else {
         item.classList.remove('active-item');
+        item.draggable = false;
       }
     });
     previousClientY = event.clientY;
