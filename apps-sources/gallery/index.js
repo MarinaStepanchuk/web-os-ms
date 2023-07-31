@@ -26,7 +26,7 @@
 
   const photoNameElement = document.createElement('span');
   photoNameElement.classList.add('photo-name');
-  photoNameElement.innerText = currentImage.name;
+  photoNameElement.innerText = currentImage?.name || '';
 
   const controlPanel = document.createElement('div');
   controlPanel.classList.add('control-panel');
@@ -75,8 +75,8 @@
   appWrapper.append(currentImageContainer);
   const openImage = document.createElement('img');
   currentImageContainer.append(openImage);
-  openImage.src = currentImage.body;
-  openImage.alt = currentImage.name;
+  openImage.src = currentImage?.body || '';
+  openImage.alt = currentImage?.name || '';
 
   const galleryList = document.createElement('div');
   galleryList.classList.add('gallery-list');

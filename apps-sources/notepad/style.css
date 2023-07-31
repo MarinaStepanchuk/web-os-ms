@@ -79,7 +79,7 @@
   position: absolute;
   top: -37px;
   left: 0;
-  width: calc(100% - 90px);
+  max-width: calc(100% - 90px);
   padding: 5px 10px 0 5px;
   box-sizing: border-box;
   display: flex;

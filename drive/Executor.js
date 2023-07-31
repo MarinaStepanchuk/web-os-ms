@@ -38,7 +38,7 @@ class Executor {
   }
 
   setFilesQueue(object) {
-    const { app } = object;
+    const { app, files } = object;
     const filesQueue = this.getFilesQueue();
     const indexExistingAppQueue = filesQueue.findIndex(
       (item) => item.app === app
@@ -46,7 +46,23 @@ class Executor {
     if (indexExistingAppQueue === -1) {
       this.filesQueueToOpen.push(object);
     } else {
-      this.filesQueueToOpen.splice(indexExistingAppQueue, -1, object);
+      const appIsOpen = driver.getOpenApps().find((item) => item === app);
+      if (appIsOpen) {
+        const appInQueue = filesQueue.find((item) => item.app === app);
+        const stringCollection = structuredClone(appInQueue.files).map((item) =>
+          JSON.stringify(item)
+        );
+        files.forEach((file) => {
+          const fileExists = stringCollection.find(
+            (item) => item === JSON.stringify(file)
+          );
+          if (!fileExists) {
+            appInQueue.files.push(file);
+          }
+        });
+      } else {
+        this.filesQueueToOpen.splice(indexExistingAppQueue, -1, object);
+      }
     }
   }
 
@@ -86,7 +102,6 @@ class Executor {
     if (files.length) {
       driver.removeOpenApp(appName);
       this.changeIndexesOpenApps();
-      this.removeFilesQueue(appName);
     }
   }
 }
