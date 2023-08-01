@@ -14,11 +14,6 @@
   let mouseIsDown = false;
   let mouseDownX = null;
   let mouseDownY = null;
-  const getArrNameByPath = (path) => {
-    const app = path.split('/').at(-1).split('.');
-    app.splice(-1, 1);
-    return app.join('.');
-  };
 
   const appWrapper = document.querySelector('.desktop-wrapper');
   const sectionDesktop = document.createElement('section');
@@ -294,8 +289,7 @@
 
   activeApps.addEventListener('click', (event) => {
     if (event.target.className.includes('footer-icon')) {
-      const appName = getArrNameByPath(event.target.getAttribute('data-path'));
-      executor.closeApp(appName);
+      const appName = getAppNameByPath(event.target.getAttribute('data-path'));
       executor.startApp(appName);
     }
   });

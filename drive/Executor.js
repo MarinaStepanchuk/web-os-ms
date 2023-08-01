@@ -75,6 +75,10 @@ class Executor {
     }
   }
 
+  clearFilesQueue() {
+    this.filesQueueToOpen = [];
+  }
+
   getDriver() {
     return this.driver;
   }
