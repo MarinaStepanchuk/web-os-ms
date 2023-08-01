@@ -123,6 +123,7 @@
 
   sectionDesktop.addEventListener('dblclick', (event) => {
     closeContextMenus();
+    deselectActiveFiles();
     const file = event.target.closest('.desktop-item');
 
     if (!file) {
@@ -263,7 +264,11 @@
 
   const activeApps = document.createElement('div');
   activeApps.classList.add('active-apps');
-  footer.append(activeApps);
+  const divider = document.createElement('div');
+  divider.classList.add('vertical-divider');
+  const openAppsContainer = document.createElement('div');
+  openAppsContainer.classList.add('open-apps');
+  footer.append(activeApps, divider, openAppsContainer);
 
   const userLaunchPadFiles = userFolder.find(
     (item) => item.name === 'launch pad' && item.type === 'folder'

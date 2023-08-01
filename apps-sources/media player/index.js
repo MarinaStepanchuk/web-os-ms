@@ -1,6 +1,14 @@
 (() => {
   const appName = 'media player';
 
+  const openAppIcon = document.createElement('div');
+  openAppIcon.classList.add('open-app-item');
+  openAppIcon.setAttribute('data-app', appName);
+  const appIcon = driver.readFile(`/apps/${appName}/icon.png`).body.body;
+  openAppIcon.style.backgroundImage = `url(${appIcon})`;
+  const desktopOpenAppContainer = document.querySelector('.open-apps');
+  desktopOpenAppContainer.append(openAppIcon);
+
   const rootElement = document.getElementById('media-player');
   rootElement.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
   rootElement.addEventListener('mousedown', (event) => {
@@ -47,6 +55,16 @@
   closeButton.innerText = '×';
 
   controlPanel.append(turnButton, expandButton, closeButton);
+
+  turnButton.addEventListener('click', () => {
+    rootElement.classList.add('hidden-app');
+    openAppIcon.classList.add('underline');
+  });
+
+  openAppIcon.addEventListener('click', () => {
+    rootElement.classList.toggle('hidden-app');
+    openAppIcon.classList.toggle('underline');
+  });
 
   closeButton.addEventListener('click', () => {
     executor.closeApp(appName);
