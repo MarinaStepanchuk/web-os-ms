@@ -31,6 +31,16 @@
   let mouseDownX = null;
   let mouseDownY = null;
 
+  const openAppIcon = document.createElement('div');
+  openAppIcon.classList.add('open-app-item');
+  openAppIcon.setAttribute('data-app', appName);
+  const appIcon = driver.readFile(`/apps/${appName}/icon.png`).body.body;
+  openAppIcon.style.backgroundImage = `url(${appIcon})`;
+  openAppIcon.style.backgroundSize = '36px 36px';
+  openAppIcon.style.backgroundPosition = 'top -5px left -2px';
+  const desktopOpenAppContainer = document.querySelector('.open-apps');
+  desktopOpenAppContainer.append(openAppIcon);
+
   const rootElement = document.getElementById('file-reader');
   const zIndexApp = driver.getOpenApps().indexOf(appName) * 10;
   rootElement.style.zIndex = zIndexApp;
@@ -68,6 +78,16 @@
   closeButton.innerText = '×';
 
   controlPanel.append(turnButton, expandButton, closeButton);
+
+  turnButton.addEventListener('click', () => {
+    rootElement.classList.add('hidden-app');
+    openAppIcon.classList.add('underline');
+  });
+
+  openAppIcon.addEventListener('click', () => {
+    rootElement.classList.toggle('hidden-app');
+    openAppIcon.classList.toggle('underline');
+  });
 
   closeButton.addEventListener('click', () => {
     filesContainer.removeEventListener('mousedown', startSelectingArea);
