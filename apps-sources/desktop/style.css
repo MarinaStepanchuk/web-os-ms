@@ -33,6 +33,7 @@ body {
   gap: 10px;
   justify-content: flex-start;
   height: 100%;
+  align-content: flex-start;
 }
 
 .desktop-wrapper .desktop-list .input-new-name {

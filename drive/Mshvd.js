@@ -98,8 +98,9 @@ class Msvhd {
     return this.hardDrive.getFolder(path);
   }
 
-  async createFile(path, file) {
+  async createFile(path, file, acsess) {
     const fileString = await convertBase64(file);
+    const { read = '', modify = '' } = acsess;
     const newFile = {
       id: new Date(),
       name: file.name,
@@ -111,8 +112,8 @@ class Msvhd {
         creator: this.hardDrive.getActiveUser(),
         public: true,
         access: {
-          reed: [],
-          modify: [],
+          read: read ? [read] : [],
+          modify: modify ? [modify] : [],
         },
       },
     };
@@ -120,8 +121,8 @@ class Msvhd {
     return this.hardDrive.writeFile(path, newFile);
   }
 
-  createFolder(path, name) {
-    return this.hardDrive.writeFolder(path, name);
+  createFolder(path, name, acsess) {
+    return this.hardDrive.writeFolder(path, name, acsess);
   }
 
   deleteFile(path) {
@@ -178,5 +179,118 @@ class Msvhd {
     );
 
     return result;
+  }
+
+  createNewUser(name, password, photo) {
+    try {
+      const newUserFile = new File(
+        [`{ user: ${name}, password: ${password} }`],
+        'user.txt',
+        {
+          type: 'text/plain',
+        }
+      );
+      this.createFolder('/users', name, { read: name, modify: name });
+      this.hardDrive.writeFile(
+        `/users/${name}`,
+        this.createUserDataFile(name, password)
+      );
+      this.createFile(`/users/${name}`, newUserFile, {
+        read: name,
+        modify: name,
+      });
+
+      if (photo) {
+        console.log(photo);
+        const avatarPhoto = new File([photo], 'avatar.jpg', {
+          type: photo.type,
+        });
+        this.createFile(`/users/${name}`, avatarPhoto, {
+          read: name,
+          modify: name,
+        });
+      } else {
+        const defaultAvatar = this.readFile('/apps/login/avatar.jpg').body;
+        this.hardDrive.writeFile(
+          `/users/${name}`,
+          structuredClone(defaultAvatar)
+        );
+      }
+
+      this.createFolder(`/users/${name}`, 'desktop', { read: name });
+      this.hardDrive.writeFile(
+        `/users/${name}/desktop`,
+        this.createDefaultAppsLabelFiles(
+          name,
+          'My computer.lbl',
+          '/apps/file reader/file reader.exe'
+        )
+      );
+      this.createFolder(`/users/${name}`, 'launch pad', { read: name });
+      this.hardDrive.writeFile(
+        `/users/${name}/launch pad`,
+        this.createDefaultAppsLabelFiles(
+          name,
+          'app manager.lbl',
+          '/apps/app manager/app manager.exe'
+        )
+      );
+      this.hardDrive.writeFile(
+        `/users/${name}/launch pad`,
+        this.createDefaultAppsLabelFiles(
+          name,
+          'file reader.lbl',
+          '/apps/file reader/file reader.exe'
+        )
+      );
+
+      return {
+        status: 'successfully',
+        body: {},
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
+  }
+
+  createDefaultAppsLabelFiles(userName, appName, path) {
+    return {
+      id: new Date(),
+      name: appName,
+      type: 'file',
+      mime: 'label/lbl',
+      size: '',
+      accessRights: {
+        creator: 'admin',
+        public: false,
+        access: {
+          read: [userName],
+          modify: [],
+        },
+      },
+      body: path,
+    };
+  }
+
+  createUserDataFile(userName, password) {
+    return {
+      id: new Date(),
+      name: 'user.txt',
+      size: 7139,
+      type: 'file',
+      mime: 'text/txt',
+      accessRights: {
+        creator: 'admin',
+        public: false,
+        access: {
+          read: [userName],
+          modify: [userName],
+        },
+      },
+      body: window.btoa(`name: ${userName}, password: ${password}`),
+    };
   }
 }

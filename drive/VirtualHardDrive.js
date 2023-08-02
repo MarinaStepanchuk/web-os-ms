@@ -35,8 +35,8 @@ class VirtualHardDrive {
       case 'read':
         return (
           creator === activeUser ||
-          access.reed.includes('all') ||
-          access.reed.includes(activeUser) ||
+          access.read.includes('all') ||
+          access.read.includes(activeUser) ||
           activeUser === 'admin'
         );
       case 'modify':
@@ -167,7 +167,8 @@ class VirtualHardDrive {
       .body;
   }
 
-  writeFolder(path, name) {
+  writeFolder(path, name, acsess) {
+    const { read = '', modify = '' } = acsess;
     try {
       const parentFolder = this.getFolder(path).body;
       let folderExists = parentFolder.find((item) => item.name === name);
@@ -188,8 +189,8 @@ class VirtualHardDrive {
           creator: hardDrive.#activeUser,
           public: true,
           access: {
-            reed: [],
-            modify: [],
+            read: read ? [read] : [],
+            modify: modify ? [modify] : [],
           },
         },
         children: [],
@@ -486,7 +487,7 @@ class VirtualHardDrive {
           creator: hardDrive.#activeUser,
           public: true,
           access: {
-            reed: [],
+            read: [],
             modify: [],
           },
         },
@@ -540,7 +541,7 @@ class VirtualHardDrive {
           creator: hardDrive.#activeUser,
           public: true,
           access: {
-            reed: [],
+            read: [],
             modify: [],
           },
         },
