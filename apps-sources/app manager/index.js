@@ -24,7 +24,7 @@
       event.clientY > rectApp.bottom ||
       event.clientY < rectApp.top;
 
-    if (clickOutside) {
+    if (clickOutside && !event.target.closest('.modal-wrapper')) {
       closeApp();
     }
   }
@@ -134,6 +134,7 @@
     [...openedApps]
       .filter((app) => app !== 'desktop')
       .forEach((app) => executor.closeApp(app));
+    hardDrive.setActiveUser('admin');
     executor.closeApp('desktop');
     executor.startApp('login');
   });
@@ -147,5 +148,119 @@
     newUserButton.classList.add('new-user-button');
     newUserButton.innerHTML = '<i class="fa fa-plus" aria-hidden="true"></i>';
     userInfo.append(newUserButton);
+  }
+
+  const newUserButton = rootElement.querySelector('.new-user-button');
+  newUserButton?.addEventListener('click', () => {
+    const desktop = document.querySelector('.desktop');
+    const modal = createModal();
+    desktop.append(modal);
+
+    const closeModalButton = document.querySelector('.close-modal-wrapper');
+    closeModalButton.addEventListener('click', () => {
+      const modal = document.querySelector('.modal-wrapper');
+      modal.remove();
+    });
+
+    const newUserForm = document.querySelector('.new-user-form');
+    newUserForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const errorMessage = event.target.querySelector('.new-user-error');
+      const inputName = event.target.querySelector('.new-user-name-input');
+      const inputPassword = event.target.querySelector(
+        '.new-user-password-input'
+      );
+      const newUserPhoto = event.target.querySelector('.new-user-photo');
+      try {
+        if (inputPassword.value.length < 3) {
+          throw new Error('password must be more than 3 characters long');
+        }
+
+        if (inputName.value.length < 3) {
+          throw new Error('name must be more than 3 characters long');
+        }
+
+        const result = driver.createNewUser(
+          inputName.value,
+          inputPassword.value,
+          newUserPhoto.files[0]
+        );
+
+        if (result.status === 'error') {
+          throw new Error('something went wrong, try again later');
+        }
+
+        await driver.updateDrive();
+        modal.remove();
+      } catch (error) {
+        errorMessage.innerText = error.message;
+        setTimeout(() => {
+          errorMessage.innerText = '';
+        }, 3000);
+      }
+    });
+
+    const inputPhoto = document.querySelector('.new-user-photo');
+    inputPhoto.addEventListener('change', (event) => {
+      const photo = event.target.files[0];
+      const label = newUserForm.querySelector('.new-user-photo-label');
+      label.style.backgroundImage = `url(${URL.createObjectURL(photo)})`;
+    });
+  });
+
+  function createModal() {
+    const modalWrapper = document.createElement('div');
+    modalWrapper.classList.add('modal-wrapper');
+    modalWrapper.setAttribute('data-app', appName);
+    const modalContainer = document.createElement('div');
+    modalContainer.classList.add('modal-container');
+    modalWrapper.append(modalContainer);
+    const closeButton = document.createElement('div');
+    closeButton.classList.add('close-modal-wrapper');
+    closeButton.innerHTML = '<i class="fa fa-times" aria-hidden="true"></i>';
+    const form = document.createElement('form');
+    form.classList.add('new-user-form');
+    const userContainer = document.createElement('div');
+    userContainer.classList.add('new-user-info-container');
+    const photoLabel = document.createElement('label');
+    photoLabel.classList.add('new-user-photo-label');
+    photoLabel.style.backgroundImage = `url(${
+      driver.readFile(`/apps/${appName}/assets/photo-icon.png`).body.body
+    })`;
+    const inputPhoto = document.createElement('input');
+    inputPhoto.type = 'file';
+    inputPhoto.classList.add('new-user-photo');
+    photoLabel.append(inputPhoto);
+    const userInfo = document.createElement('div');
+    userInfo.classList.add('new-user-info');
+    const labelName = document.createElement('label');
+    labelName.innerText = 'Name';
+    labelName.classList.add('new-user-name-label');
+    const userNameInput = document.createElement('input');
+    userNameInput.classList.add('new-user-name-input');
+    userNameInput.type = 'text';
+    userNameInput.maxlength = '20';
+    userNameInput.classList.add('new-user-name-input');
+    labelName.append(userNameInput);
+    const labelPassword = document.createElement('label');
+    labelPassword.innerText = 'Password';
+    labelPassword.classList.add('new-user-password-label');
+    const userPasswordInput = document.createElement('input');
+    userPasswordInput.classList.add('new-user-password-input');
+    userPasswordInput.type = 'text';
+    labelPassword.append(userPasswordInput);
+    userPasswordInput.classList.add('new-user-password-input');
+    userInfo.append(labelName, labelPassword);
+    userContainer.append(photoLabel, userInfo);
+    const saveUserButton = document.createElement('input');
+    saveUserButton.type = 'submit';
+    saveUserButton.classList.add('save-user-button');
+    saveUserButton.value = 'CREATE USER';
+    form.append(userContainer, saveUserButton);
+    modalContainer.append(closeButton, form);
+    const errorUser = document.createElement('p');
+    errorUser.classList.add('new-user-error');
+    form.append(errorUser);
+    return modalWrapper;
   }
 })();

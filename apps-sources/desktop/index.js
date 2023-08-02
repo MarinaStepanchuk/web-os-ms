@@ -534,7 +534,11 @@
     description.classList.add('file-description');
     const fileName = input.value.trim();
 
-    const result = driver.createFolder(desktopPath, fileName || 'New folder');
+    const result = driver.createFolder(
+      desktopPath,
+      fileName || 'New folder',
+      {}
+    );
 
     if (result.status === 'successfully') {
       await driver.updateDrive();
