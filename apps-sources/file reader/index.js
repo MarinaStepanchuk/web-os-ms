@@ -1,6 +1,7 @@
 (() => {
   const appName = 'file reader';
   const filesIcons = driver.readFolder('/apps/file reader/assets/icons').body;
+  const activeUser = hardDrive.getActiveUser();
 
   let path = executor.fileReaderPath
     ? executor.fileReaderPath
@@ -353,7 +354,15 @@
         return 0;
       });
     const filesElements = files.body
-      .filter((item) => item.type === 'file')
+      .filter((item) => {
+        return (
+          item.type === 'file' &&
+          (item.accessRights.access.read.includes(activeUser) ||
+            item.accessRights.access.read.includes('all') ||
+            item.accessRights.access.creator === activeUser ||
+            activeUser === 'admin')
+        );
+      })
       .sort((a, b) => {
         const nameA = a.name.toLowerCase();
         const nameB = b.name.toLowerCase();
@@ -741,7 +750,6 @@
       await driver.updateDrive();
       fillFileReaderBody(path);
 
-      const activeUser = hardDrive.getActiveUser();
       if (buffer[0].path === `/users/${activeUser}/desktop`) {
         executor.updateDesktop();
       }
@@ -768,7 +776,7 @@
     deselectCopyFiles();
     await driver.updateDrive();
     fillFileReaderBody(path);
-    const activeUser = hardDrive.getActiveUser();
+
     if (buffer[0].path === `/users/${activeUser}/desktop`) {
       executor.updateDesktop();
     }
@@ -921,7 +929,7 @@
       const currentPath = path.length === 0 ? '/' : `/${path.join('/')}`;
       rootElement.style.opacity = 0.8;
       for (let i = 0; i < files.length; i++) {
-        const result = await driver.createFile(currentPath, files[i]);
+        const result = await driver.createFile(currentPath, files[i], {});
         await driver.updateDrive();
         if (result.status === 'error') {
           alert(result.message);
@@ -997,7 +1005,8 @@
 
     const result = driver.createFolder(
       `/${path.join('/')}`,
-      fileName || 'New folder'
+      fileName || 'New folder',
+      {}
     );
 
     if (result.status === 'successfully') {

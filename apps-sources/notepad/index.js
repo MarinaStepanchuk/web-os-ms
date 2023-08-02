@@ -198,7 +198,7 @@
     const file = new File([editor.value], `${fileObject.file.name}.txt`, {
       type: 'text/plain',
     });
-    const result = await driver.createFile(path, file);
+    const result = await driver.createFile(path, file, {});
     if (result.status === 'successfully') {
       fileObject.editable = false;
       fileObject.file.newFile = false;

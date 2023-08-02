@@ -1,7 +1,7 @@
 (() => {
   const appName = 'login';
   const converterUserData = (data) => {
-    const convertedData = window.atob(data.split('base64,')[1]);
+    const convertedData = window.atob(data);
     return convertedData.split(',').reduce((acc, item) => {
       const element = item.split(':');
       acc[element[0].trim()] = element[1].trim();
@@ -109,7 +109,7 @@
         .find((user) => user.name === activeUser)
         .children.find((item) => item.name === 'avatar.jpg');
       avatar.style.backgroundImage = `url(${
-        url ? url.body : folder.find((item) => item.name === 'avatar.jpeg').body
+        url ? url.body : folder.find((item) => item.name === 'avatar.jpg').body
       })`;
     }
   });
