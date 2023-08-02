@@ -36,7 +36,6 @@
 
   const controlPanel = document.createElement('div');
   controlPanel.classList.add('control-panel');
-  controlPanel.classList.add('draggable');
   header.append(videoTitle, controlPanel);
 
   const turnButton = document.createElement('div');

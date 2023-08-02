@@ -2,6 +2,7 @@
   const appName = 'file reader';
   const filesIcons = driver.readFolder('/apps/file reader/assets/icons').body;
   const activeUser = hardDrive.getActiveUser();
+  let displayHiddenFiles = false;
 
   let path = executor.fileReaderPath
     ? executor.fileReaderPath
@@ -21,6 +22,7 @@
     paste: 'paste',
     loadFile: 'load file',
     createFolder: 'create folder',
+    hiddenFiles: 'show hidden files',
     open: 'open',
     rename: 'rename',
     copy: 'copy',
@@ -242,9 +244,13 @@
     const item = document.createElement('div');
     item.classList.add('file-item');
 
-    if (!file.accessRights.public) {
+    if (!file.accessRights.public && !displayHiddenFiles) {
       item.classList.add('hide');
       item.setAttribute('data-visibility', 'hidden');
+    }
+
+    if (!file.accessRights.public) {
+      item.style.opacity = 0.8;
     }
 
     const icon = document.createElement('div');
@@ -896,7 +902,12 @@
     const menu = document.createElement('ul');
     menu.classList.add('common-context-menu');
     menu.classList.add('context-menu');
-    const buttons = [actions.paste, actions.loadFile, actions.createFolder];
+    const buttons = [
+      actions.paste,
+      actions.loadFile,
+      actions.createFolder,
+      actions.hiddenFiles,
+    ];
     buttons.forEach((item) => {
       if (item === actions.loadFile) {
         const button = document.createElement('li');
@@ -911,16 +922,36 @@
         label.append(inputFile);
         menu.append(button);
         inputFile.addEventListener('change', async (event) => {
-          const files = inputFile.files;
+          const files = event.target.files;
           await loadFilesViaInput(files);
         });
         return;
       }
+
+      if (item === actions.hiddenFiles) {
+        const button = document.createElement('li');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = displayHiddenFiles;
+        checkbox.name = 'showFiles';
+        const labelCheckbox = document.createElement('label');
+        labelCheckbox.innerText = actions.hiddenFiles;
+        labelCheckbox.setAttribute('for', 'showFiles');
+        button.append(checkbox, labelCheckbox);
+        checkbox.addEventListener('change', (event) => {
+          displayHiddenFiles = event.target.checked;
+          fillFileReaderBody(path);
+        });
+        menu.append(button);
+        return;
+      }
+
       const button = document.createElement('li');
       button.innerText = item;
       button.classList.add(item.split(' ').join('-'));
       menu.append(button);
     });
+
     const desktop = document.querySelector('.desktop');
     desktop.append(menu);
     menu.style.zIndex = driver.getOpenApps().indexOf(appName) * 10;
