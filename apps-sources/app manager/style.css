@@ -153,7 +153,7 @@
   background-color: #ffffff61;
 }
 
-.modal-wrapper {
+.modal-wrapper-new-user {
   height: calc(100vh - 45px);
   width: 100vw;
   background-color: rgba(0, 0, 0, 0.4);
@@ -163,7 +163,7 @@
   z-index: 1000;
 }
 
-.modal-wrapper .modal-container {
+.modal-wrapper-new-user .modal-container {
   position: absolute;
   top: calc(50vh - 45px);
   left: 50vw;
@@ -178,39 +178,39 @@
   align-items: center;
 }
 
-.modal-wrapper .close-modal-wrapper {
+.modal-wrapper-new-user .close-modal-wrapper {
   align-self: flex-end;
   font-size: 23px;
 }
 
-.modal-wrapper form {
+.modal-wrapper-new-user form {
   display: flex;
   flex-direction: column;
   gap: 10px;
   align-items: center;
 }
 
-.modal-wrapper .new-user-info-container {
+.modal-wrapper-new-user .new-user-info-container {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 15px;
 }
 
-.modal-wrapper .new-user-info {
+.modal-wrapper-new-user .new-user-info {
   display: flex;
   flex-direction: column;
   gap: 15px;
 }
 
-.modal-wrapper .new-user-info label {
+.modal-wrapper-new-user .new-user-info label {
   width: 180px;
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 
-.modal-wrapper .new-user-info input {
+.modal-wrapper-new-user .new-user-info input {
   outline: none;
   border: none;
   border-bottom: 1px solid #a5a5a5;
@@ -218,7 +218,7 @@
   padding: 4px 5px 2px;
 }
 
-.modal-wrapper .new-user-photo-label {
+.modal-wrapper-new-user .new-user-photo-label {
   width: 150px;
   height: 150px;
   background-size: contain;
@@ -226,7 +226,7 @@
   background-position: center;
 }
 
-.modal-wrapper .new-user-photo-label input {
+.modal-wrapper-new-user .new-user-photo-label input {
   opacity: 0;
   position: absolute;
   z-index: -1;
@@ -235,7 +235,7 @@
   height: 0.4px;
 }
 
-.modal-wrapper .save-user-button {
+.modal-wrapper-new-user .save-user-button {
   width: 200px;
   height: 40px;
   color: #fff;
@@ -253,14 +253,14 @@
   border: none;
 }
 
-.modal-wrapper .save-user-button:hover {
+.modal-wrapper-new-user .save-user-button:hover {
   box-shadow: 4px 4px 6px 0 rgba(255, 255, 255, 0.5),
     -4px -4px 6px 0 rgba(116, 125, 136, 0.5),
     inset -4px -4px 6px 0 rgba(255, 255, 255, 0.2),
     inset 4px 4px 6px 0 rgba(0, 0, 0, 0.4);
 }
 
-.modal-wrapper .new-user-error {
+.modal-wrapper-new-user .new-user-error {
   margin: 0;
   color: red;
   font-size: 12px;

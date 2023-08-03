@@ -24,7 +24,7 @@
       event.clientY > rectApp.bottom ||
       event.clientY < rectApp.top;
 
-    if (clickOutside && !event.target.closest('.modal-wrapper')) {
+    if (clickOutside && !event.target.closest('.modal-wrapper-new-user')) {
       closeApp();
     }
   }
@@ -158,7 +158,7 @@
 
     const closeModalButton = document.querySelector('.close-modal-wrapper');
     closeModalButton.addEventListener('click', () => {
-      const modal = document.querySelector('.modal-wrapper');
+      const modal = document.querySelector('.modal-wrapper-new-user');
       modal.remove();
     });
 
@@ -210,7 +210,7 @@
 
   function createModal() {
     const modalWrapper = document.createElement('div');
-    modalWrapper.classList.add('modal-wrapper');
+    modalWrapper.classList.add('modal-wrapper-new-user');
     modalWrapper.setAttribute('data-app', appName);
     const modalContainer = document.createElement('div');
     modalContainer.classList.add('modal-container');
