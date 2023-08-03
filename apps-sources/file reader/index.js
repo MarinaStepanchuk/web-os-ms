@@ -364,13 +364,14 @@
         }
         return 0;
       });
+
     const filesElements = files.body
       .filter((item) => {
         return (
           item.type === 'file' &&
           (item.accessRights.access.read.includes(activeUser) ||
             item.accessRights.access.read.includes('all') ||
-            item.accessRights.access.creator === activeUser ||
+            item.accessRights.creator === activeUser ||
             activeUser === 'admin')
         );
       })

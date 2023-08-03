@@ -109,7 +109,7 @@ class Msvhd {
       body: fileString,
       type: 'file',
       accessRights: {
-        creator: this.hardDrive.getActiveUser(),
+        creator: hardDrive.getActiveUser(),
         public: true,
         access: {
           read: read ? [read] : [],

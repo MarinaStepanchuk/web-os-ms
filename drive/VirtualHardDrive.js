@@ -184,7 +184,7 @@ class VirtualHardDrive {
         name: newName,
         type: 'folder',
         accessRights: {
-          creator: hardDrive.#activeUser,
+          creator: hardDrive.getActiveUser(),
           public: true,
           access: {
             read: read ? [read] : [],
@@ -482,7 +482,7 @@ class VirtualHardDrive {
         ...file,
         name: `${newName}${extension ? `.${extension}` : ''}`,
         accessRights: {
-          creator: hardDrive.#activeUser,
+          creator: hardDrive.getActiveUser(),
           public: true,
           access: {
             read: [],
@@ -536,7 +536,7 @@ class VirtualHardDrive {
         ...file,
         name: newName,
         accessRights: {
-          creator: hardDrive.#activeUser,
+          creator: hardDrive.getActiveUser(),
           public: true,
           access: {
             read: [],
