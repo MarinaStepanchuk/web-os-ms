@@ -53,6 +53,7 @@ class VirtualHardDrive {
 
   getFile(path) {
     try {
+      console.log(path);
       const pathArray = path.split('/');
       const isRootDirectory = pathArray.length === 2;
 
@@ -81,11 +82,9 @@ class VirtualHardDrive {
       if (!folder.body) {
         throw new Error(folder.error);
       }
-
       const file = folder.body.find(
         (element) => element.name === fileName && element.type === 'file'
       );
-
       if (!file) {
         throw new Error(`file ${fileName} not found`);
       }
@@ -579,7 +578,6 @@ class VirtualHardDrive {
       file.accessRights.public = publicFile;
       file.accessRights.access.read = [...read];
       file.accessRights.access.modify = [...modify];
-      console.log(file);
       return {
         status: 'successfully',
         body: file,
