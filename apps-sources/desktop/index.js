@@ -257,13 +257,16 @@
     return app.join('.');
   }
 
+  const footerAppsContainer = document.createElement('div');
+  footerAppsContainer.classList.add('footer-apps-container');
+  footer.append(footerAppsContainer);
   const activeApps = document.createElement('div');
   activeApps.classList.add('active-apps');
   const divider = document.createElement('div');
   divider.classList.add('vertical-divider');
   const openAppsContainer = document.createElement('div');
   openAppsContainer.classList.add('open-apps');
-  footer.append(activeApps, divider, openAppsContainer);
+  footerAppsContainer.append(activeApps, divider, openAppsContainer);
 
   const userLaunchPadFiles = userFolder.find(
     (item) => item.name === 'launch pad' && item.type === 'folder'
@@ -293,6 +296,37 @@
       executor.startApp(appName);
     }
   });
+
+  const timeWidget = document.createElement('div');
+  timeWidget.classList.add('time-widget');
+  const timeContainer = document.createElement('span');
+  const dateContainer = document.createElement('span');
+  timeWidget.append(timeContainer, dateContainer);
+  footer.append(timeWidget);
+  showDateTime();
+
+  function showDateTime() {
+    const date = new Date();
+    let hours = date.getHours() < 10 ? '0' + date.getHours() : date.getHours();
+    let minutes =
+      date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes();
+    let second =
+      date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds();
+
+    timeContainer.textContent = `${hours}:${minutes}:${second}`;
+    showDate();
+    setTimeout(showDateTime, 1000);
+  }
+
+  function showDate() {
+    dateContainer.innerText = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    });
+  }
 
   let startX = null;
   let startY = null;
