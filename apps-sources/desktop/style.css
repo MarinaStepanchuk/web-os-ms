@@ -114,6 +114,23 @@ body {
   color: #4d4c4c;
 }
 
+.desktop-wrapper .weather-widget {
+  display: flex;
+  align-items: center;
+  color: #4d4c4c;
+  font-size: 12px;
+}
+
+.desktop-wrapper .weather-widget img {
+  width: 50px;
+}
+
+.desktop-wrapper .weather-description {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .desktop-wrapper .active-apps {
   display: flex;
   gap: 15px;
