@@ -53,7 +53,6 @@ class VirtualHardDrive {
 
   getFile(path) {
     try {
-      console.log(path);
       const pathArray = path.split('/');
       const isRootDirectory = pathArray.length === 2;
 
