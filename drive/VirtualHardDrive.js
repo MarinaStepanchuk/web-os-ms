@@ -167,8 +167,8 @@ class VirtualHardDrive {
       .body;
   }
 
-  writeFolder(path, name, acsess) {
-    const { read = '', modify = '' } = acsess;
+  writeFolder(path, name, access) {
+    const { read = '', modify = '' } = access;
     try {
       const parentFolder = this.getFolder(path).body;
       let folderExists = parentFolder.find((item) => item.name === name);
@@ -560,6 +560,29 @@ class VirtualHardDrive {
       return {
         status: 'successfully',
         body: newFile,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+      };
+    }
+  }
+
+  updateAccessRights(path, access) {
+    try {
+      const { publicFile, read, modify } = access;
+      const name = path.split('/').at(-1);
+      const pathParentFolder = path.split('/').slice(0, -1).join('/') || '/';
+      const parentFolder = this.getFolder(pathParentFolder).body;
+      const file = parentFolder.find((item) => item.name === name);
+      file.accessRights.public = publicFile;
+      file.accessRights.access.read = [...read];
+      file.accessRights.access.modify = [...modify];
+      console.log(file);
+      return {
+        status: 'successfully',
+        body: file,
       };
     } catch (error) {
       return {
