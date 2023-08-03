@@ -28,6 +28,7 @@
     copy: 'copy',
     cut: 'cut',
     delete: 'delete',
+    properties: 'properties',
   };
 
   let mouseIsDown = false;
@@ -243,6 +244,10 @@
   const createFileItem = (file) => {
     const item = document.createElement('div');
     item.classList.add('file-item');
+    item.setAttribute(
+      'data-path',
+      `${path.length === 0 ? '/' : `/${path.join('/')}`}`
+    );
 
     if (!file.accessRights.public && !displayHiddenFiles) {
       item.classList.add('hide');
@@ -602,6 +607,7 @@
       actions.cut,
       actions.paste,
       actions.delete,
+      actions.properties,
     ];
     buttons.forEach((item) => {
       if (
@@ -643,6 +649,7 @@
       [actions.paste]: async () => await pasteFiles(clickedElement),
       [actions.copy]: () => copyFiles(selectedFiles),
       [actions.cut]: () => cutFile(selectedFiles),
+      [actions.properties]: () => showFileProperties(clickedElement),
     };
 
     executionByTypeMap[type]?.();
@@ -895,6 +902,363 @@
         input.replaceWith(newDescription);
       }
     }
+  }
+
+  let accessRead = null;
+  let accessModify = null;
+  let openPropertiesFile = null;
+  let openPropertiesFilePath = null;
+
+  function showFileProperties(fileElement) {
+    const existingModalWindow = document.querySelector(
+      '.modal-window-file-properties'
+    );
+    existingModalWindow?.remove();
+    const name = fileElement.querySelector('.file-description').innerText;
+    const iconUrl = fileElement.querySelector('.icon').style.backgroundImage;
+    const type = fileElement.getAttribute('data-type');
+    const path = fileElement.getAttribute('data-path');
+    const file =
+      type === 'folder'
+        ? driver.readFolder(`${path}`).body.find((item) => item.name === name)
+        : driver.readFile(`${path}/${name}`).body;
+    openPropertiesFile = file;
+    openPropertiesFilePath = path;
+    const modalWindow = createPropertiesWindow(file, iconUrl, path);
+    const desktop = document.querySelector('.desktop');
+    desktop.append(modalWindow);
+  }
+
+  function createPropertiesWindow(file, iconUrl, path) {
+    const canModifyProperty =
+      openPropertiesFile.accessRights.creator === activeUser ||
+      openPropertiesFile.accessRights.access.modify.includes(activeUser) ||
+      openPropertiesFile.accessRights.access.modify.includes('all') ||
+      activeUser === 'admin';
+    const modalWindow = document.createElement('div');
+    modalWindow.classList.add('modal-window-file-properties');
+    const closeButton = document.createElement('div');
+    closeButton.classList.add('close-modal-window');
+    closeButton.innerHTML = '<i class="fa fa-times" aria-hidden="true"></i>';
+    closeButton.classList.add('draggable');
+    closeButton.addEventListener('click', closePropertiesWindow);
+    const modalContainer = document.createElement('div');
+    modalContainer.classList.add('modal-container');
+    const list = document.createElement('ul');
+    list.classList.add('list');
+    const descriptionElement = document.createElement('li');
+    const icon = document.createElement('div');
+    icon.classList.add('icon');
+    icon.style.backgroundImage = iconUrl;
+    const fileName = document.createElement('span');
+    fileName.innerText = file.name;
+    descriptionElement.append(icon, fileName);
+    const typeElement = document.createElement('li');
+    const typeTitle = document.createElement('p');
+    typeTitle.innerText = 'Type:';
+    const type = document.createElement('span');
+    type.innerText = file.mime || file.type;
+    typeElement.append(typeTitle, type);
+    const locationElement = document.createElement('li');
+    const locationTitle = document.createElement('p');
+    locationTitle.innerText = 'Location:';
+    const location = document.createElement('span');
+    location.innerText = path;
+    locationElement.append(locationTitle, location);
+    const sizeElement = document.createElement('li');
+    const sizeTitle = document.createElement('p');
+    sizeTitle.innerText = 'Size:';
+    const size = document.createElement('span');
+    const fileSize = file.type === 'file' ? file.size : getTotalSize(file);
+    size.innerText =
+      fileSize < 1024
+        ? `${fileSize} bytes`
+        : `${(fileSize / 1024).toFixed(2)} KB`;
+    sizeElement.append(sizeTitle, size);
+    const creatorElement = document.createElement('li');
+    const creatorTitle = document.createElement('p');
+    creatorTitle.innerText = 'Creator:';
+    const creator = document.createElement('span');
+    creator.innerText = file.accessRights.creator;
+    creatorElement.append(creatorTitle, creator);
+    list.append(
+      descriptionElement,
+      typeElement,
+      locationElement,
+      sizeElement,
+      creatorElement
+    );
+    const form = document.createElement('form');
+    form.classList.add('properties-form');
+    form.addEventListener(
+      'submit',
+      async (event) => await saveProperties(event)
+    );
+    const hideElement = document.createElement('div');
+    hideElement.classList.add('hiden-property');
+
+    if (canModifyProperty) {
+      const checkbox = document.createElement('input');
+      checkbox.classList.add('hide-file');
+      checkbox.type = 'checkbox';
+      checkbox.checked = !file.accessRights.public;
+      checkbox.name = 'hideFile';
+      checkbox.addEventListener('change', activateSavePropertiesButton);
+      const labelCheckbox = document.createElement('label');
+      labelCheckbox.innerText = 'hide file';
+      labelCheckbox.setAttribute('for', 'showFiles');
+      hideElement.append(checkbox, labelCheckbox);
+    } else {
+      hideElement.innerText = !file.accessRights.public
+        ? '✔ hide file'
+        : '✖ hide file';
+    }
+
+    const rightsContainer = document.createElement('div');
+    rightsContainer.classList.add('rights-container');
+    const rightTitle = document.createElement('p');
+    rightTitle.innerText = 'Access rights';
+    const rightsList = document.createElement('div');
+    rightsList.classList.add('right-lists-container');
+    rightsContainer.append(rightTitle, rightsList);
+    const readListContainer = document.createElement('div');
+    readListContainer.classList.add('read-list-container');
+    const readListTitle = document.createElement('p');
+    readListTitle.innerText = 'read:';
+    const readList = document.createElement('ul');
+    readList.classList.add('read-list');
+    accessRead = [...file.accessRights.access.read];
+    updateAccessList(readList, file.accessRights.access.read);
+    readListContainer.append(readListTitle, readList);
+
+    if (canModifyProperty) {
+      const addReadAccessButton = document.createElement('button');
+      addReadAccessButton.classList.add('add-read-access');
+      addReadAccessButton.innerHTML =
+        '<i class="fa fa-plus" aria-hidden="true"></i>';
+      addReadAccessButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        openAccessRightModal('read');
+      });
+      readListContainer.append(addReadAccessButton);
+    }
+
+    const modifyListContainer = document.createElement('div');
+    modifyListContainer.classList.add('modify-list-container');
+    const modifyListTitle = document.createElement('p');
+    modifyListTitle.innerText = 'modify:';
+    const modifyList = document.createElement('ul');
+    modifyList.classList.add('modify-list');
+    accessModify = [...file.accessRights.access.modify];
+    updateAccessList(modifyList, file.accessRights.access.modify);
+    modifyListContainer.append(modifyListTitle, modifyList);
+
+    if (canModifyProperty) {
+      const addModifyAccessButton = document.createElement('button');
+      addModifyAccessButton.classList.add('add-modify-access');
+      addModifyAccessButton.innerHTML =
+        '<i class="fa fa-plus" aria-hidden="true"></i>';
+      addModifyAccessButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        openAccessRightModal('modify');
+      });
+      modifyListContainer.append(addModifyAccessButton);
+    }
+
+    rightsList.append(readListContainer, modifyListContainer);
+    const buttonContainer = document.createElement('div');
+    buttonContainer.classList.add('button-container');
+    const submitButton = document.createElement('button');
+    submitButton.classList.add('save-properties');
+    submitButton.type = 'submit';
+    submitButton.disabled = true;
+    submitButton.innerText = 'Apply';
+    const cancelButton = document.createElement('button');
+    cancelButton.classList.add('cancel-properties');
+    cancelButton.innerText = 'Cancel';
+    cancelButton.addEventListener('click', closePropertiesWindow);
+    buttonContainer.append(submitButton, cancelButton);
+    form.append(hideElement, rightsContainer, buttonContainer);
+    modalContainer.append(list, form);
+    modalWindow.append(closeButton, modalContainer);
+
+    return modalWindow;
+  }
+
+  function updateAccessList(listElement, list) {
+    listElement.innerHTML = '';
+    if (list.length) {
+      list.forEach((item) => {
+        const itemElement = document.createElement('li');
+        itemElement.classList.add('list-item');
+        itemElement.innerText = `✓ ${item}`;
+        listElement.append(itemElement);
+      });
+
+      if (
+        !list.includes(openPropertiesFile.accessRights.creator) &&
+        !list.includes('all')
+      ) {
+        const itemElement = document.createElement('li');
+        itemElement.classList.add('list-item');
+        itemElement.innerText = `✓ ${openPropertiesFile.accessRights.creator}`;
+        listElement.append(itemElement);
+      }
+    } else {
+      const itemElement = document.createElement('li');
+      itemElement.innerText = `✓ ${openPropertiesFile.accessRights.creator}`;
+      listElement.append(itemElement);
+    }
+  }
+
+  function closePropertiesWindow() {
+    const modalWindow = document.querySelector('.modal-window-file-properties');
+    modalWindow.remove();
+    accessRead = null;
+    accessModify = null;
+    openPropertiesFile = null;
+    openPropertiesFilePath = null;
+  }
+
+  async function saveProperties(event) {
+    event.preventDefault();
+    const name = openPropertiesFile.name;
+    const pathFile =
+      openPropertiesFilePath === '/'
+        ? `/${name}`
+        : `${openPropertiesFilePath}/${name}`;
+    const hide = event.target.querySelector('.hide-file');
+
+    const access = {
+      publicFile: !hide.checked,
+      read: [...accessRead],
+      modify: [...accessModify],
+    };
+
+    const result = driver.updateAccessRights(pathFile, access);
+
+    if (result.status === 'error') {
+      alert(result.message);
+    } else {
+      await driver.updateDrive();
+      closePropertiesWindow();
+      fillFileReaderBody(path);
+    }
+  }
+
+  function activateSavePropertiesButton() {
+    const saveButton = document.querySelector('.save-properties');
+    saveButton.disabled = false;
+  }
+
+  function openAccessRightModal(accessType) {
+    const userList = driver
+      .readFolder('/users')
+      .body.filter((item) => item.type === 'folder');
+    const modalWindowWrapper = document.createElement('div');
+    modalWindowWrapper.classList.add('modal-access-wrapper');
+    const form = document.createElement('form');
+    form.classList.add('modal-access-form');
+    modalWindowWrapper.append(form);
+    const userContainer = document.createElement('ul');
+    userList.forEach((userFolder) => {
+      const userName = userFolder.name;
+      const user = document.createElement('li');
+      const label = document.createElement('label');
+      label.setAttribute('for', userFolder.name);
+      const checkbox = document.createElement('input');
+      checkbox.classList.add('user-item');
+      checkbox.type = 'checkbox';
+      checkbox.checked =
+        accessType === 'read'
+          ? accessRead.includes(userName) ||
+            userName === openPropertiesFile.accessRights.creator
+          : accessModify.includes(userName) ||
+            userName === openPropertiesFile.accessRights.creator;
+      checkbox.name = userName;
+      label.append(checkbox, userName);
+      user.append(label);
+      userContainer.append(user);
+    });
+    const allUserItem = document.createElement('li');
+    const label = document.createElement('label');
+    label.setAttribute('for', 'all');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked =
+      openPropertiesFile.accessRights.access[accessType].includes('all');
+    checkbox.name = 'all';
+    checkbox.classList.add('user-item');
+    label.append(checkbox, 'all');
+    allUserItem.append(label);
+    userContainer.append(allUserItem);
+    const buttons = document.createElement('div');
+    buttons.classList.add('buttons-container');
+    const saveButton = document.createElement('button');
+    saveButton.classList.add('save-access');
+    saveButton.innerText = 'Save';
+    const cancelButton = document.createElement('button');
+    cancelButton.classList.add('cancel-access');
+    cancelButton.innerText = 'Cancel';
+    cancelButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      const modalWindow = document.querySelector('.modal-access-wrapper');
+      modalWindow?.remove();
+    });
+    buttons.append(saveButton, cancelButton);
+    form.append(userContainer, buttons);
+
+    saveButton.addEventListener('click', (event) =>
+      saveAccessRight(event, accessType)
+    );
+
+    const modalWindowProperties = document.querySelector(
+      '.modal-window-file-properties'
+    );
+    modalWindowProperties.append(modalWindowWrapper);
+  }
+
+  function saveAccessRight(event, accessType) {
+    event.preventDefault();
+    activateSavePropertiesButton();
+    const modalWindow = document.querySelector('.modal-access-wrapper');
+    const checkboxList = modalWindow.querySelectorAll('.user-item');
+    const users = [...checkboxList]
+      .filter((item) => item.checked)
+      .map((item) => item.name);
+
+    if (accessType === 'read') {
+      accessRead = users.includes('all')
+        ? ['all']
+        : [...users].filter((item) => item !== 'all');
+      const list = document.querySelector('.read-list');
+      updateAccessList(list, accessRead);
+    } else {
+      accessModify = users.includes('all')
+        ? ['all']
+        : [...users].filter((item) => item !== 'all');
+      const list = document.querySelector('.modify-list');
+      updateAccessList(list, accessModify);
+    }
+
+    modalWindow?.remove();
+  }
+
+  function getTotalSize(file) {
+    let totalSize = 0;
+    getSize(file);
+
+    function getSize(file) {
+      file.children.forEach((file) => {
+        if (file.type === 'file') {
+          totalSize += file.size;
+        } else {
+          getSize(file);
+        }
+      });
+    }
+
+    return totalSize;
   }
 
   function openCommonContextMenu(event) {

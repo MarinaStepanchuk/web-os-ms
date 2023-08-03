@@ -98,9 +98,9 @@ class Msvhd {
     return this.hardDrive.getFolder(path);
   }
 
-  async createFile(path, file, acsess) {
+  async createFile(path, file, access) {
     const fileString = await convertBase64(file);
-    const { read = '', modify = '' } = acsess;
+    const { read = '', modify = '' } = access;
     const newFile = {
       id: new Date(),
       name: file.name,
@@ -121,8 +121,8 @@ class Msvhd {
     return this.hardDrive.writeFile(path, newFile);
   }
 
-  createFolder(path, name, acsess) {
-    return this.hardDrive.writeFolder(path, name, acsess);
+  createFolder(path, name, access) {
+    return this.hardDrive.writeFolder(path, name, access);
   }
 
   deleteFile(path) {
@@ -201,7 +201,6 @@ class Msvhd {
       });
 
       if (photo) {
-        console.log(photo);
         const avatarPhoto = new File([photo], 'avatar.jpg', {
           type: photo.type,
         });
@@ -292,5 +291,9 @@ class Msvhd {
       },
       body: window.btoa(`name: ${userName}, password: ${password}`),
     };
+  }
+
+  updateAccessRights(path, access) {
+    return this.hardDrive.updateAccessRights(path, access);
   }
 }
