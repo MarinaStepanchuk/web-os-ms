@@ -423,8 +423,16 @@
     const videos = [];
     const audios = [];
     const textFiles = [];
+    const currentPath = path.length === 0 ? '/' : `/${path.join('/')}`;
 
-    files.forEach((file) => {
+    const fileList =
+      files.length === 1
+        ? [...files]
+        : [...files].filter(
+            (item) => item.getAttribute('data-type') !== 'folder'
+          );
+
+    fileList.forEach((file) => {
       const type = file.getAttribute('data-type');
       const name = file.querySelector('.file-description').innerText;
       const appPath = file.getAttribute('data-path');
@@ -434,8 +442,7 @@
         exe: () => executor.startApp(getAppNameByPath(appPath)),
         label: () => executor.startApp(getAppNameByPath(appPath)),
         image: () => {
-          const filePath =
-            path.length === 0 ? `/${name}` : `/${path.join('/')}/${name}`;
+          const filePath = appPath === '/' ? `/${name}` : `${appPath}/${name}`;
           const searchFile = driver.readFile(filePath);
           if (searchFile.status === 'error') {
             alert(`can't open file ${name}`);
@@ -444,8 +451,7 @@
           images.push(searchFile.body);
         },
         video: () => {
-          const filePath =
-            path.length === 0 ? `/${name}` : `/${path.join('/')}/${name}`;
+          const filePath = appPath === '/' ? `/${name}` : `${appPath}/${name}`;
           const searchFile = driver.readFile(filePath);
           if (searchFile.status === 'error') {
             alert(`can't open file ${name}`);
@@ -454,8 +460,7 @@
           videos.push(searchFile.body);
         },
         audio: () => {
-          const filePath =
-            path.length === 0 ? `/${name}` : `/${path.join('/')}/${name}`;
+          const filePath = appPath === '/' ? `/${name}` : `${appPath}/${name}`;
           const searchFile = driver.readFile(filePath);
           if (searchFile.status === 'error') {
             alert(`can't open file ${name}`);
@@ -464,8 +469,7 @@
           audios.push(searchFile.body);
         },
         text: () => {
-          const filePath =
-            path.length === 0 ? `/${name}` : `/${path.join('/')}/${name}`;
+          const filePath = appPath === '/' ? `/${name}` : `${appPath}/${name}`;
           const searchFile = driver.readFile(filePath);
           if (searchFile.status === 'error') {
             alert(`can't open file ${name}`);
@@ -484,7 +488,6 @@
       }
       deselectActiveFiles();
     });
-    const currentPath = path.length === 0 ? '/' : `/${path.join('/')}`;
 
     if (images.length > 0) {
       executor.setFilesQueue({
