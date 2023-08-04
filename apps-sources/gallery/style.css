@@ -16,6 +16,7 @@
   cursor: default;
   resize: both;
   overflow: auto;
+  border: 1px solid #838080;
 }
 
 #gallery header {
