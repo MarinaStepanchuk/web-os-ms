@@ -32,6 +32,7 @@ class Executor {
       this.driver.reorderOpenApps(topAppName);
     }
     const openApps = this.driver.getOpenApps();
+
     openApps.forEach((app, index) => {
       const appWraper = document.getElementById(app.split(' ').join('-'));
       appWraper.style.zIndex = index * 10;
@@ -86,7 +87,7 @@ class Executor {
   updateDesktop() {
     const desktopList = document.querySelector('.desktop-list');
     desktopList.innerHTML = '';
-    const activeUser = this.driver.getActiveUser();
+    const activeUser = hardDrive.getActiveUser();
     const userFolder = this.driver.readFolder(`/users/${activeUser}`).body;
     const userDesktopFiles = userFolder.find(
       (item) => item.name === 'desktop' && item.type === 'folder'
@@ -181,7 +182,6 @@ class Executor {
     });
     if (files.length) {
       driver.removeOpenApp(appName);
-      this.changeIndexesOpenApps();
     }
   }
 }

@@ -1,4 +1,4 @@
-(() => {
+(async () => {
   const appName = 'desktop';
   const activeUser = hardDrive.getActiveUser();
   const desktopPath = `/users/${activeUser}/desktop`;
@@ -24,7 +24,7 @@
 
   const appFolder = driver.readFolder('/apps/desktop').body;
   const wallpaperUrl = appFolder.find(
-    (item) => item.name === 'wallpapper.jpg'
+    (item) => item.name === 'wallpaper.jpg'
   ).body;
   sectionDesktop.style.backgroundImage = `url(${wallpaperUrl})`;
   const userFolder = driver.readFolder(`/users/${activeUser}`).body;
@@ -255,6 +255,44 @@
 
     app.splice(-1, 1);
     return app.join('.');
+  }
+
+  const weatherWidget = document.createElement('div');
+  weatherWidget.classList.add('weather-widget');
+  const weatherIcon = document.createElement('img');
+  const weatherData = document.createElement('div');
+  weatherData.classList.add('weather-description');
+  const temperature = document.createElement('span');
+  const city = document.createElement('span');
+  weatherData.append(temperature, city);
+  weatherWidget.append(weatherIcon, weatherData);
+  footer.append(weatherWidget);
+
+  await getWeather();
+
+  async function getWeather() {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { longitude, latitude } = position.coords;
+          const responseCity = await fetch(
+            `http://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=10&appid=464c0ac1c4af661625ccdc322e9deebd`
+          );
+          const dataCity = await responseCity.json();
+          const cityValue = dataCity[0].name;
+          const urlWeatherApi = `https://api.openweathermap.org/data/2.5/weather?q=${cityValue}&lang=en&appid=6482b58158f95b17d9dce830a81efd17&units=metric`;
+          const responseWeather = await fetch(urlWeatherApi);
+          const dataWeather = await responseWeather.json();
+
+          if (dataWeather.cod === 200) {
+            weatherIcon.src = `https://openweathermap.org/img/wn/${dataWeather.weather[0].icon}@2x.png`;
+            temperature.innerText = `${Math.floor(dataWeather.main.temp)}°C`;
+            city.innerText = cityValue;
+          }
+        },
+        () => alert('Cannot get location, default city selected')
+      );
+    }
   }
 
   const footerAppsContainer = document.createElement('div');
